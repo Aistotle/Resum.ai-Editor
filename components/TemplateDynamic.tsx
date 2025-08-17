@@ -30,12 +30,13 @@ interface TemplateDynamicProps {
   onUpdate: (path: string, value: any) => void;
   onFocus: (path: string | null) => void;
   editingPath: string | null;
+  onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
 }
 
 const TemplateDynamic: React.FC<TemplateDynamicProps> = (props) => {
-    const { data, design, onOverflowChange, config, t, editMode, onUpdate, onFocus, editingPath } = props;
+    const { data, design, onOverflowChange, config, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
     const { layout, colors, typography, sectionStyles, density } = config;
-    const editableProps = { editMode, onUpdate, onFocus, editingPath };
+    const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
 
     // --- Pagination Logic ---
     const PAGE_MAX_WEIGHT = density === 'compact' ? 650 : (density === 'spacious' ? 480 : 550);

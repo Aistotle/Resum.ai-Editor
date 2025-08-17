@@ -90,6 +90,9 @@ export interface ResumeData {
   interests?: string[];
 }
 
+export type SectionId = 'basics' | 'summary' | 'profiles' | 'experience' | 'education' | 'skills' | 'projects' | 'certifications' | 'languages' | 'interests';
+
+
 export interface SelectionTooltipState {
   visible: boolean;
   top?: number;

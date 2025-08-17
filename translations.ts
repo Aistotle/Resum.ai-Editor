@@ -50,6 +50,9 @@ export const translations: Record<Language, any> = {
     add: "Tilføj",
     editItem: "Rediger Element",
     saveChanges: "Gem Ændringer",
+    moveUp: "Flyt op",
+    moveDown: "Flyt ned",
+    dragHandle: "Træk for at genbestille",
     // Field labels
     picture: "Billede",
     fullName: "Fulde navn",
@@ -195,6 +198,9 @@ export const translations: Record<Language, any> = {
     add: "Add",
     editItem: "Edit Item",
     saveChanges: "Save Changes",
+    moveUp: "Move up",
+    moveDown: "Move down",
+    dragHandle: "Drag to reorder",
     // Field labels
     picture: "Picture",
     fullName: "Full Name",

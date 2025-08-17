@@ -78,10 +78,11 @@ interface TemplateBlueHeroProps {
   onUpdate: (path: string, value: any) => void;
   onFocus: (path: string | null) => void;
   editingPath: string | null;
+  onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
 }
 
 const TemplateBlueHero: React.FC<TemplateBlueHeroProps> = (props) => {
-  const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath } = props;
+  const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
   
   useEffect(() => {
     // This template is designed to be 3 pages, so we never report an overflow.
@@ -117,7 +118,7 @@ const TemplateBlueHero: React.FC<TemplateBlueHeroProps> = (props) => {
 
   const highlights = data.skills.slice(0, 4);
   const otherSkills = data.skills.slice(4);
-  const editableProps = { editMode, onUpdate, onFocus, editingPath };
+  const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
 
   return (
     <div className="resume-blue-hero transition-all duration-300">

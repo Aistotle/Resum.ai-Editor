@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { SparklesIcon } from './Icons';
 
 type EditableProps = {
   value: any; // Can be string or string[]
@@ -11,6 +12,7 @@ type EditableProps = {
   onUpdate: (path: string, value: any) => void;
   onFocus: (path: string | null) => void;
   editingPath: string | null;
+  onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
 };
 
 const Editable: React.FC<EditableProps> = ({
@@ -23,18 +25,17 @@ const Editable: React.FC<EditableProps> = ({
   editMode,
   onUpdate,
   onFocus,
-  editingPath
+  editingPath,
+  onAITooltipOpen
 }) => {
   const elementRef = useRef<HTMLElement>(null);
-  const isEditingByAI = editingPath === path;
+  const isFocused = editingPath === path;
+  const isEditingByAI = isFocused && !document.hasFocus(); // A heuristic to guess if AI is editing
   const isArrayValue = Array.isArray(value);
   const Component = as || 'div';
 
-  // Convert array to string with newlines for editing, or use the plain string value
   const displayValue = isArrayValue ? value.join('\n') : (value || '');
 
-  // This effect ensures the element's content is updated if the prop changes from outside (e.g., sidebar edit)
-  // without causing the cursor to jump during direct editing.
   useEffect(() => {
     const element = elementRef.current;
     if (element && displayValue !== element.innerText) {
@@ -46,14 +47,13 @@ const Editable: React.FC<EditableProps> = ({
     const element = elementRef.current;
     if (element) {
       const newText = element.innerText;
-      // Only trigger update if the text has actually changed
       if (newText !== displayValue) {
-        // If original value was an array, split the text back into an array
         const newValue = isArrayValue ? newText.split('\n').filter(line => line.trim() !== '') : newText;
         onUpdate(path, newValue);
       }
     }
-    onFocus(null); // Clear the active editing path
+    // A small delay allows the AI button click to register before we lose focus state
+    setTimeout(() => onFocus(null), 100); 
   };
 
   const handleFocus = () => {
@@ -62,22 +62,41 @@ const Editable: React.FC<EditableProps> = ({
     }
   };
 
+  const handleAIButtonClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const element = elementRef.current;
+      if (element) {
+          onAITooltipOpen(path, element.innerText, element);
+      }
+  };
+
   return (
-    <Component
-      ref={elementRef as any}
-      className={`${className || ''} ${isEditingByAI ? 'animate-pulse bg-blue-100 dark:bg-blue-900/50 rounded-sm' : ''} ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-text' : ''}`}
-      style={style}
-      data-path={path}
-      contentEditable={editMode}
-      suppressContentEditableWarning={true}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      // Use a key to ensure React re-renders the component if the data is updated externally
-      // This is crucial for keeping the contentEditable in sync.
-      key={path + displayValue}
-    >
-      {children}
-    </Component>
+    <div className="relative group">
+        <Component
+            ref={elementRef as any}
+            className={`${className || ''} ${isEditingByAI ? 'animate-pulse bg-blue-100 dark:bg-blue-900/50 rounded-sm' : ''} ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-text' : ''}`}
+            style={style}
+            data-path={path}
+            contentEditable={editMode}
+            suppressContentEditableWarning={true}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            key={path + displayValue}
+        >
+            {children}
+        </Component>
+        {editMode && isFocused && (
+             <button 
+                onClick={handleAIButtonClick}
+                onMouseDown={(e) => e.preventDefault()} // Prevent this button from stealing focus on click
+                className="absolute top-1/2 -right-1 -translate-y-1/2 translate-x-full p-1 bg-white dark:bg-gray-800 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 text-primary transition-all opacity-0 group-focus-within:opacity-100"
+                aria-label="Ask AI to improve this text"
+            >
+                <SparklesIcon className="w-4 h-4" />
+            </button>
+        )}
+    </div>
   );
 };
 

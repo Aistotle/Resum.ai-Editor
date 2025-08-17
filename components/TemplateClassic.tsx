@@ -57,10 +57,11 @@ interface TemplateClassicProps {
   onUpdate: (path: string, value: any) => void;
   onFocus: (path: string | null) => void;
   editingPath: string | null;
+  onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
 }
 
 const TemplateClassic: React.FC<TemplateClassicProps> = (props) => {
-  const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath } = props;
+  const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
   // Constants for pagination logic. Tuned for this single-column template.
   const PAGE_1_MAX_WEIGHT = 400; 
   const SUBSEQUENT_PAGE_MAX_WEIGHT = 550;
@@ -93,7 +94,7 @@ const TemplateClassic: React.FC<TemplateClassicProps> = (props) => {
   }, [experiencePages.length, onOverflowChange]);
 
   const getOriginalIndex = (jobToFind: Experience) => data.experience.findIndex(job => job === jobToFind);
-  const editableProps = { editMode, onUpdate, onFocus, editingPath };
+  const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
 
   return (
     <div className="transition-all duration-300">

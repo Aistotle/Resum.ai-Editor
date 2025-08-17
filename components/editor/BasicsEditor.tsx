@@ -1,5 +1,5 @@
 import React from 'react';
-import { ResumeData } from '../../types';
+import { ResumeData, SectionId } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import FormInput from './FormInput';
 import { User } from '../Icons';
@@ -8,11 +8,21 @@ interface BasicsEditorProps {
     data: ResumeData;
     onUpdate: (path: string, value: string) => void;
     t: (key: string) => string;
+    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
+    isFirst: boolean;
+    isLast: boolean;
 }
 
-const BasicsEditor: React.FC<BasicsEditorProps> = ({ data, onUpdate, t }) => {
+const BasicsEditor: React.FC<BasicsEditorProps> = ({ data, onUpdate, t, onReorderSection, isFirst, isLast }) => {
     return (
-        <SectionWrapper id="basics" icon={User} title={t('sectionBasics')}>
+        <SectionWrapper 
+            id="basics" 
+            icon={User} 
+            title={t('sectionBasics')}
+            onReorderSection={onReorderSection}
+            isFirst={isFirst}
+            isLast={isLast}
+        >
             <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="md:col-span-1">

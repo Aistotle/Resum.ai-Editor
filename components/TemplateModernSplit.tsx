@@ -14,6 +14,7 @@ interface TemplateProps {
   onUpdate: (path: string, value: any) => void;
   onFocus: (path: string | null) => void;
   editingPath: string | null;
+  onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
 }
 
 // =====================
@@ -97,10 +98,10 @@ const buildExperiencePages = (data: ResumeData) => {
 // Template Component
 // =====================
 const TemplateModernSplit: React.FC<TemplateProps> = (props) => {
-  const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath } = props;
+  const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
   const pages = useMemo(() => buildExperiencePages(data), [data]);
   const getOriginalIndex = (jobToFind: Experience) => data.experience.findIndex(job => job === jobToFind);
-  const editableProps = { editMode, onUpdate, onFocus, editingPath };
+  const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
 
   useEffect(() => {
     onOverflowChange(pages.length > 2);

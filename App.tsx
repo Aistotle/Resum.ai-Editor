@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { AppState, ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, ModalState } from './types';
+import { AppState, ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, ModalState, SectionId } from './types';
 import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI } from './services/geminiService';
 import FileUpload from './components/FileUpload';
 import LoadingIndicator from './components/LoadingIndicator';
@@ -25,6 +25,11 @@ const defaultDesignOptions: DesignOptions = {
   profilePictureShape: 'circle',
 };
 
+const initialSectionOrder: SectionId[] = [
+    'basics', 'summary', 'profiles', 'experience', 'education', 
+    'skills', 'projects', 'certifications', 'languages', 'interests'
+];
+
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.INITIAL);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -48,6 +53,7 @@ const App: React.FC = () => {
   const [isControlPanelOpen, setIsControlPanelOpen] = useState(true);
   const [isLiveEditingEnabled, setIsLiveEditingEnabled] = useState<boolean>(true);
   const [modalState, setModalState] = useState<ModalState | null>(null);
+  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(initialSectionOrder);
 
 
   const t = useCallback((key: string, replacements?: Record<string, string>): string => {
@@ -93,6 +99,7 @@ const App: React.FC = () => {
     setEditingPath(null);
     setZoomLevel(100);
     setIsLiveEditingEnabled(true);
+    setSectionOrder(initialSectionOrder);
     // Keep custom templates and language
   };
 
@@ -237,6 +244,46 @@ const App: React.FC = () => {
       return newResume;
     });
   }, []);
+  
+  const handleReorderSection = useCallback((sectionId: SectionId, direction: 'up' | 'down') => {
+      setSectionOrder(prevOrder => {
+          const index = prevOrder.indexOf(sectionId);
+          if (index === -1) return prevOrder;
+
+          const newIndex = direction === 'up' ? index - 1 : index + 1;
+          if (newIndex < 0 || newIndex >= prevOrder.length) return prevOrder;
+
+          const newOrder = [...prevOrder];
+          const [movedItem] = newOrder.splice(index, 1);
+          newOrder.splice(newIndex, 0, movedItem);
+          return newOrder;
+      });
+  }, []);
+
+  const handleReorderItem = useCallback((path: keyof ResumeData, oldIndex: number, newIndex: number) => {
+      setImprovedResume(prev => {
+          if (!prev) return null;
+          const newResume = JSON.parse(JSON.stringify(prev));
+          const list = newResume[path] as any[];
+          if (!Array.isArray(list)) return newResume;
+          
+          const [movedItem] = list.splice(oldIndex, 1);
+          list.splice(newIndex, 0, movedItem);
+
+          return newResume;
+      });
+  }, []);
+  
+  const handleAITooltipOpen = (path: string, selectedText: string, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    setSelectionTooltip({
+      visible: true,
+      top: rect.top + window.scrollY,
+      left: rect.right + window.scrollX + 10,
+      selectedText,
+      contextPath: path,
+    });
+  };
 
   const handleSelectionEdit = useCallback(async (instruction: string) => {
     if (!improvedResume || !selectionTooltip.visible || !selectionTooltip.contextPath) return;
@@ -355,6 +402,7 @@ const App: React.FC = () => {
             onResumeUpdate={handleResumeUpdate}
             onOpenModal={handleOpenModal}
             onRemoveItem={handleRemoveItem}
+            onReorderItem={handleReorderItem}
             isDownloading={isDownloading}
             onDownloadComplete={() => setIsDownloading(false)}
             hasOverflow={hasOverflow}
@@ -367,6 +415,7 @@ const App: React.FC = () => {
             language={language}
             selectionTooltip={selectionTooltip}
             onSelectionTooltipChange={setSelectionTooltip}
+            onAITooltipOpen={handleAITooltipOpen}
             onSelectionEdit={handleSelectionEdit}
             editingPath={editingPath}
             onProfilePictureChange={handleProfilePictureChange}
@@ -377,6 +426,8 @@ const App: React.FC = () => {
             isLiveEditingEnabled={isLiveEditingEnabled}
             onLiveEditingChange={setIsLiveEditingEnabled}
             onActivePathChange={setEditingPath}
+            sectionOrder={sectionOrder}
+            onReorderSection={handleReorderSection}
           />
         ) : (
           <ErrorMessage message="Something went wrong displaying the resume." onRetry={resetState} t={t} />

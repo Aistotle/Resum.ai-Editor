@@ -1,25 +1,89 @@
-import React from 'react';
-import { ResumeData } from '../../types';
+import React, { useState } from 'react';
+import { ResumeData, SectionId } from '../../types';
 import SectionWrapper from './SectionWrapper';
-import { Share, Plus, Trash2, Pencil } from '../Icons';
+import { Share, Plus, Trash2, Pencil, Menu } from '../Icons';
 
 interface ProfilesEditorProps {
     data: ResumeData;
     onOpenModal: (path: 'profiles', index?: number) => void;
     onRemoveItem: (path: 'profiles', index: number) => void;
+    onReorderItem: (path: 'profiles', oldIndex: number, newIndex: number) => void;
     t: (key: string) => string;
+    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
+    isFirst: boolean;
+    isLast: boolean;
 }
 
-const ProfilesEditor: React.FC<ProfilesEditorProps> = ({ data, onOpenModal, onRemoveItem, t }) => {
+const ProfilesEditor: React.FC<ProfilesEditorProps> = (props) => {
+    const { data, onOpenModal, onRemoveItem, onReorderItem, t, onReorderSection, isFirst, isLast } = props;
     const profiles = data.profiles || [];
+    
+    const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+        setDraggingIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+        e.preventDefault();
+        if (draggingIndex === null || draggingIndex === index) return;
+        setDragOverIndex(index);
+    };
+
+    const handleDragLeave = () => {
+        setDragOverIndex(null);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+        e.preventDefault();
+        if (draggingIndex === null) return;
+        onReorderItem('profiles', draggingIndex, index);
+        setDraggingIndex(null);
+        setDragOverIndex(null);
+    };
+
+    const handleDragEnd = () => {
+        setDraggingIndex(null);
+        setDragOverIndex(null);
+    };
+
     return (
-        <SectionWrapper id="profiles" icon={Share} title={t('sectionProfiles')}>
+        <SectionWrapper 
+            id="profiles" 
+            icon={Share} 
+            title={t('sectionProfiles')}
+            onReorderSection={onReorderSection}
+            isFirst={isFirst}
+            isLast={isLast}
+        >
             <div className="space-y-4">
                 {profiles.map((profile, index) => (
-                    <div key={index} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:shadow-md transition-shadow">
-                        <div>
-                            <p className="font-semibold text-gray-800 dark:text-gray-200">{profile.network || `(${t('network')})`}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{profile.username || `(${t('username')})`}</p>
+                    <div 
+                        key={index}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, index)}
+                        onDragEnd={handleDragEnd}
+                        className={`p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between transition-all duration-200
+                            ${draggingIndex === index ? 'opacity-50 scale-105 shadow-2xl' : 'hover:shadow-md'}
+                            ${dragOverIndex === index ? 'border-primary border-dashed bg-blue-50 dark:bg-blue-900/20' : ''}
+                        `}
+                    >
+                        <div className="flex items-center gap-2">
+                             <button 
+                                className="cursor-move p-1 text-gray-400 hover:text-gray-700"
+                                aria-label={t('dragHandle')}
+                            >
+                                <Menu className="w-5 h-5" />
+                            </button>
+                            <div>
+                                <p className="font-semibold text-gray-800 dark:text-gray-200">{profile.network || `(${t('network')})`}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{profile.username || `(${t('username')})`}</p>
+                            </div>
                         </div>
                         <div className="flex items-center gap-2">
                              <button onClick={() => onOpenModal('profiles', index)} className="p-2 text-gray-500 hover:text-primary hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full">

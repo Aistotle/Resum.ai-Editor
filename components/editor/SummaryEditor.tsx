@@ -1,5 +1,5 @@
 import React from 'react';
-import { ResumeData } from '../../types';
+import { ResumeData, SectionId } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import { FileText } from '../Icons';
 
@@ -7,6 +7,9 @@ interface SummaryEditorProps {
     data: ResumeData;
     onUpdate: (path: string, value: string) => void;
     t: (key: string) => string;
+    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
+    isFirst: boolean;
+    isLast: boolean;
 }
 
 // A mock RTE toolbar for visual purposes as requested.
@@ -19,9 +22,16 @@ const MiniRTEToolbar = () => {
     )
 };
 
-const SummaryEditor: React.FC<SummaryEditorProps> = ({ data, onUpdate, t }) => {
+const SummaryEditor: React.FC<SummaryEditorProps> = ({ data, onUpdate, t, onReorderSection, isFirst, isLast }) => {
     return (
-        <SectionWrapper id="summary" icon={FileText} title={t('sectionSummary')}>
+        <SectionWrapper 
+            id="summary" 
+            icon={FileText} 
+            title={t('sectionSummary')}
+            onReorderSection={onReorderSection}
+            isFirst={isFirst}
+            isLast={isLast}
+        >
             <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
                 <MiniRTEToolbar />
                 <div

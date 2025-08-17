@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import { ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState } from '../types';
+import { ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, SectionId } from '../types';
 import ResumeTemplate from './ResumeTemplate';
 import TemplateClassic from './TemplateClassic';
 import TemplateBlueHero from './TemplateBlueHero';
@@ -26,6 +26,7 @@ interface ResumeEditorProps {
     onResumeUpdate: (path: string, value: any) => void;
     onOpenModal: (path: keyof ResumeData, index?: number) => void;
     onRemoveItem: (path: keyof ResumeData, index: number) => void;
+    onReorderItem: (path: keyof ResumeData, oldIndex: number, newIndex: number) => void;
     isDownloading: boolean;
     onDownloadComplete: () => void;
     hasOverflow: boolean;
@@ -38,6 +39,7 @@ interface ResumeEditorProps {
     language: Language;
     selectionTooltip: SelectionTooltipState;
     onSelectionTooltipChange: (state: SelectionTooltipState) => void;
+    onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
     onSelectionEdit: (instruction: string) => void;
     editingPath: string | null;
     onProfilePictureChange: (file: File | null) => void;
@@ -48,6 +50,8 @@ interface ResumeEditorProps {
     isLiveEditingEnabled: boolean;
     onLiveEditingChange: (enabled: boolean) => void;
     onActivePathChange: (path: string | null) => void;
+    sectionOrder: SectionId[];
+    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
 }
 
 const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
@@ -58,36 +62,8 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
     const { 
         isDownloading, onDownloadComplete, resumeData, hasOverflow, selectedTemplate, t, 
         selectionTooltip, onSelectionTooltipChange, onSelectionEdit,
-        zoomLevel, isControlPanelOpen, isLiveEditingEnabled
+        zoomLevel, isControlPanelOpen
     } = props;
-
-    const handleMouseUp = useCallback((event: MouseEvent) => {
-        if (tooltipRef.current && tooltipRef.current.contains(event.target as Node)) return;
-        if (!isLiveEditingEnabled) return;
-
-        const selection = window.getSelection();
-        if (selection && selection.toString().trim().length > 5 && resumeContainerRef.current?.contains(selection.anchorNode)) {
-            const range = selection.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-            
-            let target = selection.anchorNode;
-            if (target.nodeType !== Node.ELEMENT_NODE) target = target.parentElement!;
-
-            const editableElement = (target as HTMLElement).closest('[data-path]');
-            if (editableElement) {
-                const contextPath = editableElement.getAttribute('data-path');
-                onSelectionTooltipChange({
-                    visible: true,
-                    top: rect.bottom + window.scrollY + 5,
-                    left: rect.left + window.scrollX + rect.width / 2,
-                    selectedText: selection.toString(),
-                    contextPath: contextPath || undefined,
-                });
-            }
-        } else {
-            onSelectionTooltipChange({ visible: false });
-        }
-    }, [onSelectionTooltipChange, isLiveEditingEnabled]);
     
     const handleMouseDown = useCallback((event: MouseEvent) => {
         if (tooltipRef.current && !tooltipRef.current.contains(event.target as Node)) {
@@ -96,13 +72,12 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
     }, [onSelectionTooltipChange]);
 
     useEffect(() => {
-        document.addEventListener('mouseup', handleMouseUp);
+        // This listener closes the tooltip if you click anywhere outside of it.
         document.addEventListener('mousedown', handleMouseDown);
         return () => {
-            document.removeEventListener('mouseup', handleMouseUp);
             document.removeEventListener('mousedown', handleMouseDown);
         };
-    }, [handleMouseUp, handleMouseDown]);
+    }, [handleMouseDown]);
 
 
     useEffect(() => {
@@ -151,6 +126,7 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
             onUpdate: props.onResumeUpdate,
             onFocus: props.onActivePathChange,
             editingPath: props.editingPath,
+            onAITooltipOpen: props.onAITooltipOpen,
         };
         
         const currentTemplateId = typeof selectedTemplate === 'string' ? selectedTemplate : selectedTemplate.id;
@@ -194,7 +170,10 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 onUpdate={props.onResumeUpdate}
                 onOpenModal={props.onOpenModal}
                 onRemoveItem={props.onRemoveItem}
+                onReorderItem={props.onReorderItem}
                 t={props.t}
+                sectionOrder={props.sectionOrder}
+                onReorderSection={props.onReorderSection}
             />
 
             {/* Main Content Area */}
