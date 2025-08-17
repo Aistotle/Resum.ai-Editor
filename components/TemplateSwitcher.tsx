@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TemplateIdentifier, TemplateConfig } from '../types';
 import { LayoutGrid } from './Icons';
 import TemplateUploadModal from './TemplateUploadModal';
-import { ModernPreview, ClassicPreview, BlueHeroPreview, ModernSplitPreview, DynamicPreview } from './TemplatePreviews';
+import { ModernPreview, ClassicPreview, BlueHeroPreview, ModernSplitPreview, ProfessionalPreview, DynamicPreview } from './TemplatePreviews';
 
 interface TemplateSwitcherProps {
     selectedTemplate: TemplateIdentifier | TemplateConfig;
@@ -79,6 +79,12 @@ const TemplateSwitcher: React.FC<TemplateSwitcherProps> = ({ selectedTemplate, o
                         preview={<ModernSplitPreview />}
                         isSelected={getIsSelected(TemplateIdentifier.MODERN_SPLIT)}
                         onClick={() => onTemplateChange(TemplateIdentifier.MODERN_SPLIT)}
+                    />
+                    <TemplateOption 
+                        label={t('professional')}
+                        preview={<ProfessionalPreview />}
+                        isSelected={getIsSelected(TemplateIdentifier.PROFESSIONAL)}
+                        onClick={() => onTemplateChange(TemplateIdentifier.PROFESSIONAL)}
                     />
                 </div>
                 

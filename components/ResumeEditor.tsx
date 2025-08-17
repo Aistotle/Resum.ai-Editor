@@ -6,6 +6,7 @@ import ResumeTemplate from './ResumeTemplate';
 import TemplateClassic from './TemplateClassic';
 import TemplateBlueHero from './TemplateBlueHero';
 import TemplateModernSplit from './TemplateModernSplit';
+import TemplateProfessional from './TemplateProfessional';
 import TemplateDynamic from './TemplateDynamic';
 import ControlPanel from './ControlPanel';
 import PaginationWarning from './PaginationWarning';
@@ -83,8 +84,8 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
     useEffect(() => {
         const generatePdf = async () => {
             if (!resumeContainerRef.current) {
-                 onDownloadComplete();
-                 return;
+                onDownloadComplete();
+                return;
             }
 
             const pages = resumeContainerRef.current.querySelectorAll('.resume-page');
@@ -93,11 +94,19 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 return;
             }
 
+            // Force the layout to a fixed width to ensure correct rendering by html2canvas
+            const originalBodyWidth = document.body.style.width;
+            document.body.style.width = '8.5in';
+
             try {
                 const pdf = new jsPDF('p', 'in', 'letter');
                 for (let i = 0; i < pages.length; i++) {
                     const page = pages[i] as HTMLElement;
-                    const canvas = await html2canvas(page, { scale: 2, useCORS: true, logging: false });
+                    const canvas = await html2canvas(page, { 
+                        scale: 2, // Use a higher scale for better resolution
+                        useCORS: true, 
+                        logging: false 
+                    });
                     const imgData = canvas.toDataURL('image/png');
                     if (i > 0) pdf.addPage();
                     pdf.addImage(imgData, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
@@ -107,12 +116,15 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 console.error("Failed to generate PDF:", error);
                 alert("Sorry, there was an error creating the PDF. Please try again.");
             } finally {
+                 // Restore the original body width
+                document.body.style.width = originalBodyWidth;
                 onDownloadComplete();
             }
         };
 
         if (isDownloading) {
-            generatePdf();
+            // A small delay allows the DOM to settle before capturing, ensuring all styles are applied.
+            setTimeout(generatePdf, 100);
         }
     }, [isDownloading, onDownloadComplete, resumeData]);
 
@@ -144,6 +156,8 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 return <TemplateBlueHero {...templateProps} />;
             case TemplateIdentifier.MODERN_SPLIT:
                 return <TemplateModernSplit {...templateProps} />;
+            case TemplateIdentifier.PROFESSIONAL:
+                return <TemplateProfessional {...templateProps} />;
             default:
                 return <p>Unknown template selected.</p>;
         }

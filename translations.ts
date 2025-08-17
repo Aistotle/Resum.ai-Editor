@@ -116,6 +116,7 @@ export const translations: Record<Language, any> = {
     classic: "Klassisk",
     blueHero: "Blå Helt",
     modernSplit: "Moderne Opdelt",
+    professional: "Professionel",
     aiTemplates: "Dine AI-skabeloner",
     createWithAI: "Opret med AI",
 
@@ -149,6 +150,8 @@ export const translations: Record<Language, any> = {
     // Modern Split Specific
     labelResume: "CV",
     labelContinued: "Fortsat",
+    // Professional Specific
+    contact: "Kontakt",
   },
   en: {
     // Header
@@ -264,6 +267,7 @@ export const translations: Record<Language, any> = {
     classic: "Classic",
     blueHero: "Blue Hero",
     modernSplit: "Modern Split",
+    professional: "Professional",
     aiTemplates: "Your AI Templates",
     createWithAI: "Create with AI",
     
@@ -297,5 +301,7 @@ export const translations: Record<Language, any> = {
     // Modern Split Specific
     labelResume: "RESUME",
     labelContinued: "Continued",
+    // Professional Specific
+    contact: "Contact",
   }
 };

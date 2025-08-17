@@ -45,6 +45,14 @@ export const ModernSplitPreview = () => (
     </PreviewContainer>
 );
 
+export const ProfessionalPreview = () => (
+    <PreviewContainer>
+        <rect x="0" y="0" width="30" height="100" fill="currentColor" opacity="0.2" />
+        <rect x="38" y="10" width="34" height="8" fill="currentColor" opacity="0.2" />
+        <rect x="38" y="23" width="34" height="67" fill="currentColor" opacity="0.1" />
+    </PreviewContainer>
+);
+
 export const DynamicPreview = () => (
     <PreviewContainer>
         <path d="M20 20 L60 20 L60 80 L20 80 Z" stroke="currentColor" strokeWidth="2" strokeDasharray="4" fill="none" opacity="0.5"/>
