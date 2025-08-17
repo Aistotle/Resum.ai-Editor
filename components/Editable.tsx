@@ -13,6 +13,7 @@ type EditableProps = {
   onFocus: (path: string | null) => void;
   editingPath: string | null;
   onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
+  isHtml?: boolean;
 };
 
 const Editable: React.FC<EditableProps> = ({
@@ -26,7 +27,8 @@ const Editable: React.FC<EditableProps> = ({
   onUpdate,
   onFocus,
   editingPath,
-  onAITooltipOpen
+  onAITooltipOpen,
+  isHtml = false,
 }) => {
   const elementRef = useRef<HTMLElement>(null);
   const isFocused = editingPath === path;
@@ -38,19 +40,34 @@ const Editable: React.FC<EditableProps> = ({
 
   useEffect(() => {
     const element = elementRef.current;
-    if (element && displayValue !== element.innerText) {
-      element.innerText = displayValue;
+    if (element) {
+        if (isHtml) {
+            if (displayValue !== element.innerHTML) {
+                element.innerHTML = displayValue;
+            }
+        } else {
+            if (displayValue !== element.innerText) {
+                element.innerText = displayValue;
+            }
+        }
     }
-  }, [displayValue]);
+  }, [displayValue, isHtml]);
 
   const handleBlur = () => {
     const element = elementRef.current;
     if (element) {
-      const newText = element.innerText;
-      if (newText !== displayValue) {
-        const newValue = isArrayValue ? newText.split('\n').filter(line => line.trim() !== '') : newText;
-        onUpdate(path, newValue);
-      }
+        if (isHtml) {
+            const newHTML = element.innerHTML;
+            if (newHTML !== displayValue) {
+                onUpdate(path, newHTML);
+            }
+        } else {
+            const newText = element.innerText;
+            if (newText !== displayValue) {
+                const newValue = isArrayValue ? newText.split('\n').filter(line => line.trim() !== '') : newText;
+                onUpdate(path, newValue);
+            }
+        }
     }
     // A small delay allows the AI button click to register before we lose focus state
     setTimeout(() => onFocus(null), 100); 
@@ -70,21 +87,28 @@ const Editable: React.FC<EditableProps> = ({
           onAITooltipOpen(path, element.innerText, element);
       }
   };
+  
+  const componentProps: any = {
+    ref: elementRef,
+    className: `${className || ''} ${isEditingByAI ? 'animate-pulse bg-blue-100 dark:bg-blue-900/50 rounded-sm' : ''} ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-text' : ''}`,
+    style: style,
+    'data-path': path,
+    contentEditable: editMode,
+    suppressContentEditableWarning: true,
+    onFocus: handleFocus,
+    onBlur: handleBlur,
+    key: path + displayValue,
+  };
+  
+  if (isHtml) {
+      componentProps.dangerouslySetInnerHTML = { __html: displayValue };
+  }
+
 
   return (
     <div className="relative group">
-        <Component
-            ref={elementRef as any}
-            className={`${className || ''} ${isEditingByAI ? 'animate-pulse bg-blue-100 dark:bg-blue-900/50 rounded-sm' : ''} ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-text' : ''}`}
-            style={style}
-            data-path={path}
-            contentEditable={editMode}
-            suppressContentEditableWarning={true}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            key={path + displayValue}
-        >
-            {children}
+        <Component {...componentProps}>
+            {!isHtml ? children : null}
         </Component>
         {editMode && isFocused && (
              <button 

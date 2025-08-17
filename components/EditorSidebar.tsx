@@ -21,13 +21,14 @@ interface EditorSidebarProps {
     t: (key: string) => string;
     sectionOrder: SectionId[];
     onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
+    onProfilePictureChange: (file: File | null) => void;
 }
 
 const EditorSidebar: React.FC<EditorSidebarProps> = (props) => {
-    const { isOpen, resumeData, onUpdate, onOpenModal, onRemoveItem, onReorderItem, t, sectionOrder, onReorderSection } = props;
+    const { isOpen, resumeData, onUpdate, onOpenModal, onRemoveItem, onReorderItem, t, sectionOrder, onReorderSection, onProfilePictureChange } = props;
 
     const sectionComponents: Record<SectionId, React.ReactNode> = {
-        basics: <BasicsEditor data={resumeData} onUpdate={onUpdate} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'basics'} isLast={sectionOrder[sectionOrder.length-1] === 'basics'} />,
+        basics: <BasicsEditor data={resumeData} onUpdate={onUpdate} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'basics'} isLast={sectionOrder[sectionOrder.length-1] === 'basics'} onProfilePictureChange={onProfilePictureChange} />,
         summary: <SummaryEditor data={resumeData} onUpdate={onUpdate} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'summary'} isLast={sectionOrder[sectionOrder.length-1] === 'summary'} />,
         profiles: <ProfilesEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'profiles'} isLast={sectionOrder[sectionOrder.length-1] === 'profiles'} />,
         experience: <ExperienceEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'experience'} isLast={sectionOrder[sectionOrder.length-1] === 'experience'}/>,

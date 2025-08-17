@@ -174,6 +174,7 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 t={props.t}
                 sectionOrder={props.sectionOrder}
                 onReorderSection={props.onReorderSection}
+                onProfilePictureChange={props.onProfilePictureChange}
             />
 
             {/* Main Content Area */}

@@ -170,7 +170,7 @@ const ResumeTemplate: React.FC<ResumeTemplateProps> = (props) => {
           </aside>
           <div className="md:col-span-2">
             {data.summary && <Section id="summary" title={t('sectionSummary')}>
-              <Editable value={data.summary} path="summary" {...editableProps} className="text-gray-700 leading-relaxed" />
+              <Editable value={data.summary} path="summary" {...editableProps} isHtml={true} className="text-gray-700 leading-relaxed prose prose-sm max-w-none dark:prose-invert" />
             </Section>}
             {page1Experience.length > 0 && (
               <Section id="experience" title={t('sectionExperience')}>

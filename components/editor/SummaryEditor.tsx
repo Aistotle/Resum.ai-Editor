@@ -1,7 +1,7 @@
 import React from 'react';
 import { ResumeData, SectionId } from '../../types';
 import SectionWrapper from './SectionWrapper';
-import { FileText } from '../Icons';
+import { FileText, Bold, Italic, Underline, List, ListOrdered } from '../Icons';
 
 interface SummaryEditorProps {
     data: ResumeData;
@@ -12,17 +12,23 @@ interface SummaryEditorProps {
     isLast: boolean;
 }
 
-// A mock RTE toolbar for visual purposes as requested.
-const MiniRTEToolbar = () => {
-    const buttons = ['B', 'I', 'S', 'A', '@', 'link', '</>', 'H1', 'H2', 'H3', 'list-ol', 'list-ul'];
-    return (
-        <div className="flex flex-wrap items-center gap-2 p-2 border-b border-gray-200 dark:border-gray-700">
-            {buttons.map(b => <div key={b} className="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded text-xs flex items-center justify-center text-gray-500 dark:text-gray-400">{b[0]}</div>)}
-        </div>
-    )
-};
+const RTEToolbarButton: React.FC<{ onClick: () => void, children: React.ReactNode, 'aria-label': string }> = ({ onClick, children, 'aria-label': ariaLabel }) => (
+    <button
+      onClick={onClick}
+      onMouseDown={e => e.preventDefault()} // Prevent editor from losing focus
+      className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
+      aria-label={ariaLabel}
+    >
+      {children}
+    </button>
+);
 
 const SummaryEditor: React.FC<SummaryEditorProps> = ({ data, onUpdate, t, onReorderSection, isFirst, isLast }) => {
+    
+    const handleFormat = (command: string) => {
+        document.execCommand(command, false, undefined);
+    };
+    
     return (
         <SectionWrapper 
             id="summary" 
@@ -33,12 +39,19 @@ const SummaryEditor: React.FC<SummaryEditorProps> = ({ data, onUpdate, t, onReor
             isLast={isLast}
         >
             <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
-                <MiniRTEToolbar />
+                <div className="flex flex-wrap items-center gap-1 p-1 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+                    <RTEToolbarButton onClick={() => handleFormat('bold')} aria-label="Bold"><Bold className="w-4 h-4" /></RTEToolbarButton>
+                    <RTEToolbarButton onClick={() => handleFormat('italic')} aria-label="Italic"><Italic className="w-4 h-4" /></RTEToolbarButton>
+                    <RTEToolbarButton onClick={() => handleFormat('underline')} aria-label="Underline"><Underline className="w-4 h-4" /></RTEToolbarButton>
+                    <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+                    <RTEToolbarButton onClick={() => handleFormat('insertUnorderedList')} aria-label="Bulleted List"><List className="w-4 h-4" /></RTEToolbarButton>
+                    <RTEToolbarButton onClick={() => handleFormat('insertOrderedList')} aria-label="Numbered List"><ListOrdered className="w-4 h-4" /></RTEToolbarButton>
+                </div>
                 <div
                     contentEditable
                     suppressContentEditableWarning
                     onBlur={(e) => onUpdate('summary', e.currentTarget.innerHTML)}
-                    className="p-3 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
+                    className="p-3 min-h-[150px] focus:outline-none prose dark:prose-invert prose-sm max-w-none"
                     dangerouslySetInnerHTML={{ __html: data.summary }}
                 />
             </div>

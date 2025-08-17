@@ -193,8 +193,8 @@ const TemplateModernSplit: React.FC<TemplateProps> = (props) => {
                           )}
                         </div>
 
-                        <div id="summary" data-section-id="summary" className="quote mt-4 scroll-mt-24">
-                          <Editable value={data.summary ?? ''} path="summary" {...editableProps} />
+                        <div id="summary" data-section-id="summary" className="quote mt-4 scroll-mt-24 prose prose-sm max-w-none dark:prose-invert">
+                          <Editable value={data.summary ?? ''} path="summary" {...editableProps} isHtml={true} />
                         </div>
 
                         <div id="education" data-section-id="education" className="mt-6 scroll-mt-24">

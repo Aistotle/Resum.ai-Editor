@@ -102,7 +102,7 @@ const TemplateDynamic: React.FC<TemplateDynamicProps> = (props) => {
 
     const Section: React.FC<{name: SectionName}> = ({name}) => {
       const sectionMap: {[key in SectionName]: React.ReactNode} = {
-          summary: <Editable value={data.summary} path="summary" {...editableProps} style={{ ...typography.body, color: typography.body.color || colors.text }} />,
+          summary: <Editable value={data.summary} path="summary" {...editableProps} isHtml={true} className="prose prose-sm max-w-none dark:prose-invert" style={{ ...typography.body, color: typography.body.color || colors.text }} />,
           skills: (
               <ul className="flex flex-wrap gap-2">
                   {data.skills.map((skill, index) => (

@@ -132,7 +132,7 @@ const TemplateBlueHero: React.FC<TemplateBlueHeroProps> = (props) => {
             <Editable as="div" value={data.name} path="name" {...editableProps} className="name" />
             <Editable as="div" value={data.title} path="title" {...editableProps} className="tag" />
             <div id="summary" data-section-id="summary" className="scroll-mt-24">
-                <Editable as="p" value={data.summary} path="summary" {...editableProps} className="max-w-xl mt-1 opacity-95" />
+                <Editable as="p" value={data.summary} path="summary" {...editableProps} isHtml={true} className="max-w-xl mt-1 opacity-95 prose prose-sm prose-invert" />
             </div>
             <div className="highlights">
               {highlights.map((skill, index) => (

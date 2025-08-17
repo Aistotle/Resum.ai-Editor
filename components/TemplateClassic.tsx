@@ -123,7 +123,7 @@ const TemplateClassic: React.FC<TemplateClassicProps> = (props) => {
 
         <main>
             {data.summary && <Section id="summary" title={t('sectionSummary')}>
-                <Editable value={data.summary} path="summary" {...editableProps} className="text-center leading-relaxed" />
+                <Editable value={data.summary} path="summary" {...editableProps} isHtml={true} className="text-center leading-relaxed prose prose-sm max-w-none dark:prose-invert" />
             </Section>}
 
             {data.skills?.length > 0 && <Section id="skills" title={t('sectionSkills')}>
