@@ -6,6 +6,11 @@ export enum AppState {
   ERROR = 'ERROR',
 }
 
+export enum EditorView {
+  RESUME = 'RESUME',
+  COVER_LETTER = 'COVER_LETTER',
+}
+
 export enum TemplateIdentifier {
   MODERN = 'MODERN',
   CLASSIC = 'CLASSIC',
@@ -90,6 +95,19 @@ export interface ResumeData {
   languages?: LanguageSkill[];
   interests?: string[];
 }
+
+export interface CoverLetterData {
+  recipientName?: string;
+  recipientTitle?: string;
+  companyName?: string;
+  companyAddress?: string;
+  date?: string;
+  subject?: string;
+  body: string; // The main content, will be HTML
+  senderName?: string;
+  senderContactInfo?: string[];
+}
+
 
 export type SectionId = 'basics' | 'summary' | 'profiles' | 'experience' | 'education' | 'skills' | 'projects' | 'certifications' | 'languages' | 'interests';
 

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { AppState, ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, ModalState, SectionId } from './types';
-import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI } from './services/geminiService';
+import { AppState, ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, ModalState, SectionId, EditorView, CoverLetterData } from './types';
+import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI, generateCoverLetterWithAI, editCoverLetterWithAI } from './services/geminiService';
 import FileUpload from './components/FileUpload';
 import LoadingIndicator from './components/LoadingIndicator';
 import ErrorMessage from './components/ErrorMessage';
@@ -54,6 +54,11 @@ const App: React.FC = () => {
   const [isLiveEditingEnabled, setIsLiveEditingEnabled] = useState<boolean>(true);
   const [modalState, setModalState] = useState<ModalState | null>(null);
   const [sectionOrder, setSectionOrder] = useState<SectionId[]>(initialSectionOrder);
+  
+  // New state for cover letter feature
+  const [editorView, setEditorView] = useState<EditorView>(EditorView.RESUME);
+  const [coverLetter, setCoverLetter] = useState<CoverLetterData | null>(null);
+  const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState<boolean>(false);
 
 
   const t = useCallback((key: string, replacements?: Record<string, string>): string => {
@@ -100,6 +105,9 @@ const App: React.FC = () => {
     setZoomLevel(100);
     setIsLiveEditingEnabled(true);
     setSectionOrder(initialSectionOrder);
+    setEditorView(EditorView.RESUME);
+    setCoverLetter(null);
+    setIsGeneratingCoverLetter(false);
     // Keep custom templates and language
   };
 
@@ -162,19 +170,28 @@ const App: React.FC = () => {
     const newConversation: ConversationMessage[] = [...conversation, { role: 'user', text: message }];
     setConversation(newConversation);
     setIsChatProcessing(true);
+    setError(null);
 
     try {
-        const updatedResume = await editResumeWithAI(improvedResume, message, language);
-        setImprovedResume(updatedResume);
-        setConversation([...newConversation, { role: 'ai', text: t('chatUpdate') }]);
+        if (editorView === EditorView.RESUME) {
+            const updatedResume = await editResumeWithAI(improvedResume, message, language);
+            setImprovedResume(updatedResume);
+            setConversation([...newConversation, { role: 'ai', text: t('chatUpdate') }]);
+        } else if (editorView === EditorView.COVER_LETTER && coverLetter) {
+            const updatedCoverLetter = await editCoverLetterWithAI(coverLetter, message, language);
+            setCoverLetter(updatedCoverLetter);
+            setConversation([...newConversation, { role: 'ai', text: t('chatUpdateCoverLetter') }]);
+        } else {
+             setConversation([...newConversation, { role: 'ai', text: t('chatError') }]);
+        }
     } catch (e: any) {
-        console.error('Error editing resume:', e);
+        console.error('Error editing content:', e);
         setConversation([...newConversation, { role: 'ai', text: t('chatError') }]);
     } finally {
         setIsChatProcessing(false);
     }
 
-  }, [improvedResume, conversation, language, t]);
+  }, [improvedResume, conversation, language, t, editorView, coverLetter]);
   
   const handleResumeUpdate = useCallback((path: string, value: any) => {
     setImprovedResume(prev => {
@@ -201,6 +218,19 @@ const App: React.FC = () => {
         return newResume;
     });
   }, []);
+
+  const handleCoverLetterUpdate = useCallback((path: string, value: any) => {
+    setCoverLetter(prev => {
+        if (!prev) return null;
+        const newCoverLetter = { ...prev };
+        const key = path.split('.')[1] as keyof CoverLetterData;
+        if (key) {
+            (newCoverLetter[key] as any) = value;
+        }
+        return newCoverLetter;
+    });
+  }, []);
+
   
   const handleOpenModal = useCallback((path: keyof ResumeData, index?: number) => {
      if (!improvedResume) return;
@@ -286,16 +316,16 @@ const App: React.FC = () => {
   };
 
   const handleSelectionEdit = useCallback(async (instruction: string) => {
-    if (!improvedResume || !selectionTooltip.visible || !selectionTooltip.contextPath) return;
-
+    if (!selectionTooltip.visible || !selectionTooltip.contextPath) return;
+    
     setEditingPath(selectionTooltip.contextPath);
     try {
-      const newText = await editSelectedTextWithAI(
-        instruction,
-        selectionTooltip.selectedText!,
-        language
-      );
-      handleResumeUpdate(selectionTooltip.contextPath, newText);
+        const newText = await editSelectedTextWithAI(instruction, selectionTooltip.selectedText!, language);
+        if (editorView === EditorView.RESUME && improvedResume) {
+             handleResumeUpdate(selectionTooltip.contextPath, newText);
+        } else if (editorView === EditorView.COVER_LETTER && selectionTooltip.contextPath.startsWith('coverLetter')) {
+             handleCoverLetterUpdate(selectionTooltip.contextPath, newText);
+        }
     } catch (e: any) {
       console.error("Error editing selected text:", e);
       alert(t('tooltipError'));
@@ -303,7 +333,7 @@ const App: React.FC = () => {
       setSelectionTooltip({ visible: false }); // Hide tooltip after operation
       setEditingPath(null);
     }
-  }, [improvedResume, selectionTooltip, language, t, handleResumeUpdate]);
+  }, [improvedResume, selectionTooltip, language, t, handleResumeUpdate, editorView, coverLetter, handleCoverLetterUpdate]);
 
   const handleDesignChange = (option: keyof DesignOptions, value: string) => {
     setDesignOptions(prev => ({ ...prev, [option]: value }));
@@ -360,6 +390,31 @@ const App: React.FC = () => {
   const handleZoomChange = (newZoom: number) => {
     setZoomLevel(newZoom);
   };
+
+  const handleGenerateCoverLetter = useCallback(async (jobDescription: string) => {
+    if (!improvedResume) return;
+    setIsGeneratingCoverLetter(true);
+    setError(null);
+    try {
+        const aiGeneratedPart = await generateCoverLetterWithAI(improvedResume, jobDescription, language);
+        const finalCoverLetter: CoverLetterData = {
+            ...aiGeneratedPart,
+            senderName: improvedResume.name,
+            senderContactInfo: [
+                improvedResume.contact.location || '',
+                improvedResume.contact.phone,
+                improvedResume.contact.email,
+                improvedResume.contact.website,
+            ].filter(Boolean)
+        };
+        setCoverLetter(finalCoverLetter);
+    } catch (e: any) {
+        setError(t('coverLetterError', { message: e.message }));
+        console.error("Cover letter generation error:", e);
+    } finally {
+        setIsGeneratingCoverLetter(false);
+    }
+  }, [improvedResume, language, t]);
 
   const renderInitialView = () => (
     <div className="w-full max-w-2xl text-center flex flex-col items-center">
@@ -428,6 +483,15 @@ const App: React.FC = () => {
             onActivePathChange={setEditingPath}
             sectionOrder={sectionOrder}
             onReorderSection={handleReorderSection}
+            
+            // New props for cover letter
+            editorView={editorView}
+            onEditorViewChange={setEditorView}
+            coverLetter={coverLetter}
+            onUpdateCoverLetter={handleCoverLetterUpdate}
+            onGenerateCoverLetter={handleGenerateCoverLetter}
+            isGeneratingCoverLetter={isGeneratingCoverLetter}
+            coverLetterError={error}
           />
         ) : (
           <ErrorMessage message="Something went wrong displaying the resume." onRetry={resetState} t={t} />
@@ -484,7 +548,7 @@ const App: React.FC = () => {
         language={language}
         onLanguageChange={setLanguage}
         t={t}
-        onToggleSidebar={() => setIsSidebarOpen(o => !o)}
+        onToggleSidebar={isEditorView ? () => setIsSidebarOpen(o => !o) : undefined}
         onToggleControlPanel={() => setIsControlPanelOpen(o => !o)}
       />
       <main className={`w-full transition-all duration-500 ${isEditorView ? 'pt-16' : 'pt-16 sm:pt-20'}`}>

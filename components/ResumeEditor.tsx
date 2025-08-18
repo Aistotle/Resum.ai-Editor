@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import { ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, SectionId } from '../types';
+import { ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, SectionId, EditorView, CoverLetterData } from '../types';
 import ResumeTemplate from './ResumeTemplate';
 import TemplateClassic from './TemplateClassic';
 import TemplateBlueHero from './TemplateBlueHero';
@@ -13,6 +13,7 @@ import PaginationWarning from './PaginationWarning';
 import SelectionTooltip from './SelectionTooltip';
 import ZoomControls from './ZoomControls';
 import EditorSidebar from './EditorSidebar';
+import CoverLetterEditor from './CoverLetterEditor';
 
 
 interface ResumeEditorProps {
@@ -53,6 +54,14 @@ interface ResumeEditorProps {
     onActivePathChange: (path: string | null) => void;
     sectionOrder: SectionId[];
     onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
+    // New props
+    editorView: EditorView;
+    onEditorViewChange: (view: EditorView) => void;
+    coverLetter: CoverLetterData | null;
+    onUpdateCoverLetter: (path: string, value: any) => void;
+    onGenerateCoverLetter: (jobDescription: string) => void;
+    isGeneratingCoverLetter: boolean;
+    coverLetterError: string | null;
 }
 
 const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
@@ -63,7 +72,7 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
     const { 
         isDownloading, onDownloadComplete, resumeData, hasOverflow, selectedTemplate, t, 
         selectionTooltip, onSelectionTooltipChange, onSelectionEdit,
-        zoomLevel, isControlPanelOpen
+        zoomLevel, isControlPanelOpen, editorView, onEditorViewChange
     } = props;
     
     const handleMouseDown = useCallback((event: MouseEvent) => {
@@ -83,50 +92,44 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
 
     useEffect(() => {
         const generatePdf = async () => {
-            if (!resumeContainerRef.current) {
+            const container = resumeContainerRef.current;
+            if (!container) {
                 onDownloadComplete();
                 return;
             }
 
-            const pages = resumeContainerRef.current.querySelectorAll('.resume-page');
+            const pages = container.querySelectorAll('.resume-page');
             if (pages.length === 0) {
                 onDownloadComplete();
                 return;
             }
 
-            // Force the layout to a fixed width to ensure correct rendering by html2canvas
-            const originalBodyWidth = document.body.style.width;
-            document.body.style.width = '8.5in';
-
             try {
                 const pdf = new jsPDF('p', 'in', 'letter');
+                const pdfWidth = 8.5;
+                const pdfHeight = 11;
+
                 for (let i = 0; i < pages.length; i++) {
                     const page = pages[i] as HTMLElement;
-                    const canvas = await html2canvas(page, { 
-                        scale: 2, // Use a higher scale for better resolution
-                        useCORS: true, 
-                        logging: false 
-                    });
-                    const imgData = canvas.toDataURL('image/png');
+                    const canvas = await html2canvas(page, { scale: 2.5, useCORS: true });
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
                     if (i > 0) pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
                 }
-                pdf.save(`${resumeData.name.replace(/\s/g, '_')}_Resume.pdf`);
+                const docName = editorView === EditorView.RESUME ? "Resume" : "Cover_Letter";
+                pdf.save(`${resumeData.name.replace(/\s/g, '_')}_${docName}.pdf`);
             } catch (error) {
                 console.error("Failed to generate PDF:", error);
                 alert("Sorry, there was an error creating the PDF. Please try again.");
             } finally {
-                 // Restore the original body width
-                document.body.style.width = originalBodyWidth;
                 onDownloadComplete();
             }
         };
 
         if (isDownloading) {
-            // A small delay allows the DOM to settle before capturing, ensuring all styles are applied.
-            setTimeout(generatePdf, 100);
+            setTimeout(generatePdf, 100); // Small delay to allow UI to update to "Downloading..."
         }
-    }, [isDownloading, onDownloadComplete, resumeData]);
+    }, [isDownloading, onDownloadComplete, resumeData.name, editorView]);
 
     const renderPreview = () => {
         const templateProps = {
@@ -162,8 +165,27 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 return <p>Unknown template selected.</p>;
         }
     };
+
+    const ViewSwitcher = () => (
+        <div className="w-full flex justify-center mb-8">
+            <div className="bg-gray-200 dark:bg-gray-700 p-1 rounded-full flex items-center gap-1">
+                <button 
+                    onClick={() => onEditorViewChange(EditorView.RESUME)}
+                    className={`px-6 py-2 text-sm font-bold rounded-full transition-colors ${editorView === EditorView.RESUME ? 'bg-white dark:bg-gray-800 text-primary shadow' : 'text-gray-600 dark:text-gray-300'}`}
+                >
+                    {t('resume')}
+                </button>
+                 <button 
+                    onClick={() => onEditorViewChange(EditorView.COVER_LETTER)}
+                    className={`px-6 py-2 text-sm font-bold rounded-full transition-colors ${editorView === EditorView.COVER_LETTER ? 'bg-white dark:bg-gray-800 text-primary shadow' : 'text-gray-600 dark:text-gray-300'}`}
+                >
+                    {t('coverLetter')}
+                </button>
+            </div>
+        </div>
+    );
     
-    const showOverflowWarning = hasOverflow && selectedTemplate !== TemplateIdentifier.BLUE_HERO;
+    const showOverflowWarning = hasOverflow && selectedTemplate !== TemplateIdentifier.BLUE_HERO && editorView === EditorView.RESUME;
 
     return (
         <div className="w-full h-full flex overflow-hidden">
@@ -180,6 +202,7 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
             
             <EditorSidebar 
                 isOpen={props.isSidebarOpen}
+                editorView={props.editorView}
                 resumeData={props.resumeData}
                 onUpdate={props.onResumeUpdate}
                 onOpenModal={props.onOpenModal}
@@ -192,28 +215,47 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
             />
 
             {/* Main Content Area */}
-            <div className="relative flex-grow h-full overflow-y-auto px-4 sm:px-6 md:px-8 py-12 sm:py-16 md:py-20 bg-gray-100 dark:bg-gray-800">
-                <div ref={resumeContainerRef}>
-                    <div className="max-w-4xl mx-auto">
-                        {showOverflowWarning && <PaginationWarning t={t} />}
-                        <div 
-                            style={{
-                                transform: `scale(${zoomLevel / 100})`,
-                                transformOrigin: 'top center',
-                                transition: 'transform 0.2s ease-out'
-                            }}
-                        >
-                            {renderPreview()}
+            <div className="relative flex-grow h-full overflow-y-auto px-4 sm:px-6 md:px-8 py-8 sm:py-10 bg-gray-100 dark:bg-gray-800">
+                <ViewSwitcher />
+                <div 
+                    ref={resumeContainerRef}
+                    style={{
+                        transform: `scale(${zoomLevel / 100})`,
+                        transformOrigin: 'top center',
+                        transition: 'transform 0.2s ease-out'
+                    }}
+                >
+                    {editorView === EditorView.RESUME ? (
+                        <div className="max-w-4xl mx-auto">
+                            {showOverflowWarning && <PaginationWarning t={t} />}
+                            <div>
+                                {renderPreview()}
+                            </div>
                         </div>
-                    </div>
-                    <ZoomControls zoomLevel={props.zoomLevel} onZoomChange={props.onZoomChange} t={t} isControlPanelOpen={isControlPanelOpen} />
+                    ) : (
+                         <CoverLetterEditor
+                            coverLetterData={props.coverLetter}
+                            onGenerate={props.onGenerateCoverLetter}
+                            onUpdate={props.onUpdateCoverLetter}
+                            isGenerating={props.isGeneratingCoverLetter}
+                            t={t}
+                            error={props.coverLetterError}
+                            onAITooltipOpen={props.onAITooltipOpen}
+                            editingPath={props.editingPath}
+                            onActivePathChange={props.onActivePathChange}
+                        />
+                    )}
                 </div>
+                <ZoomControls zoomLevel={props.zoomLevel} onZoomChange={props.onZoomChange} t={t} isControlPanelOpen={isControlPanelOpen} />
             </div>
             
             {/* Control Panel */}
             <aside ref={controlPanelRef} className={`flex-shrink-0 transition-all duration-300 ease-in-out bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 ${isControlPanelOpen ? 'w-full max-w-md' : 'w-0'}`}>
                  <div className={`h-full overflow-hidden transition-opacity duration-200 ${isControlPanelOpen ? 'p-4 opacity-100' : 'p-0 opacity-0'}`}>
-                    <ControlPanel {...props} />
+                    <ControlPanel 
+                        {...props}
+                        availablePanels={editorView === EditorView.RESUME ? ['AI Chat', 'Design', 'Templates'] : ['AI Chat']}
+                    />
                  </div>
             </aside>
         </div>

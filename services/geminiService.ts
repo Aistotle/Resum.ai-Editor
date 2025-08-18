@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ResumeData, TemplateConfig, LayoutType, TwoColumnLayoutRatio, SectionName, Language } from '../types';
+import { ResumeData, CoverLetterData, TemplateConfig, LayoutType, TwoColumnLayoutRatio, SectionName, Language } from '../types';
 
 const API_KEY = process.env.API_KEY;
 
@@ -100,6 +100,21 @@ const resumeSchema = {
     },
     required: ["name", "title", "summary", "contact", "skills", "experience", "education"]
 };
+
+const coverLetterSchema = {
+    type: Type.OBJECT,
+    properties: {
+        recipientName: { type: Type.STRING, description: "Hiring Manager's name, if available in the job description. Otherwise, a generic title like 'Hiring Manager' or 'Recruiting Team'." },
+        recipientTitle: { type: Type.STRING, description: "Hiring Manager's title, if available." },
+        companyName: { type: Type.STRING, description: "The name of the company." },
+        companyAddress: { type: Type.STRING, description: "The company's address, if available." },
+        date: { type: Type.STRING, description: "Today's date in a 'Month Day, Year' format." },
+        subject: { type: Type.STRING, description: "A compelling subject line, typically 'Application for the [Job Title] Position'." },
+        body: { type: Type.STRING, description: "The main body of the cover letter as a single string with HTML line breaks (<br />). It should start with a salutation, have 3-4 paragraphs highlighting relevant skills, and end with a professional closing and the candidate's name." },
+    },
+    required: ["companyName", "date", "subject", "body"]
+};
+
 
 const typographyConfigSchema = {
     type: Type.OBJECT,
@@ -374,5 +389,103 @@ export const analyzeResumeTemplate = async (imageDataUrl: string, fileName: stri
     } catch (error) {
         console.error("Error analyzing template with Gemini API:", error);
         throw new Error("Failed to analyze resume template. The AI may have struggled with this design. Try a clearer image.");
+    }
+};
+
+export const generateCoverLetterWithAI = async (
+    resumeData: ResumeData,
+    jobDescription: string,
+    language: Language
+): Promise<Omit<CoverLetterData, 'senderName' | 'senderContactInfo'>> => {
+    const languageInstruction = language === 'da'
+        ? "The entire output MUST be in professional, fluent Danish."
+        : "The entire output MUST be in professional, fluent English.";
+
+    try {
+        const prompt = `
+            You are a professional career coach and expert cover letter writer. Your task is to generate the content for a cover letter based on a candidate's resume and a job description.
+
+            **PRIMARY GOAL: Create a tailored and impactful cover letter and return it as a structured JSON object.**
+            - **LANGUAGE REQUIREMENT: ${languageInstruction}**
+            - Analyze the job description to find the company's name, address, and potentially a hiring manager's name and title. If not available, use professional placeholders.
+            - Generate today's date in a 'Month Day, Year' format.
+            - Create a compelling subject line for the application.
+            - Write the main body of the letter. It must be a single string containing HTML line breaks (<br />). The body must be structured with a salutation (e.g., "Dear Hiring Manager,"), 3-4 paragraphs highlighting the most relevant skills from the resume that match the job description, and a strong concluding paragraph with a professional sign-off (e.g., "Sincerely,").
+            - Do not include the sender's name or contact info in the body's sign-off; that will be handled separately by the application. Just end with the closing like "Sincerely,".
+            - Return ONLY the valid JSON object.
+
+            **Candidate's Resume (for context):**
+            ---
+            ${JSON.stringify(resumeData, null, 2)}
+            ---
+
+            **Job Description:**
+            ---
+            ${jobDescription}
+            ---
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: coverLetterSchema,
+            }
+        });
+
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText);
+
+    } catch (error) {
+        console.error("Error generating cover letter with Gemini API:", error);
+        throw new Error("Failed to generate cover letter with AI. Please try again.");
+    }
+};
+
+export const editCoverLetterWithAI = async (
+    currentCoverLetter: CoverLetterData,
+    instruction: string,
+    language: Language
+): Promise<CoverLetterData> => {
+    const languageInstruction = language === 'da'
+        ? "You MUST apply all edits and return the final text in professional, fluent Danish."
+        : "You MUST apply all edits and return the final text in professional,fluent English.";
+
+    try {
+        const prompt = `
+            You are a text editing assistant. Your task is to apply the user's requested change to the provided cover letter JSON data.
+
+            **PRIMARY GOAL: Intelligently apply the user's edit while maintaining a professional and consistent tone.**
+            - **LANGUAGE REQUIREMENT: ${languageInstruction}**
+            - The user's instruction will typically apply to the 'body' of the letter, but you should be prepared to edit any field if requested (e.g., "Change the subject line to...").
+            - You MUST return the **complete, updated cover letter** as a single, valid JSON object that adheres to the provided schema.
+            - Ensure the 'body' string maintains its HTML line breaks (<br />).
+
+            **User's Instruction:**
+            ---
+            ${instruction}
+            ---
+
+            **Current Cover Letter JSON:**
+            ---
+            ${JSON.stringify(currentCoverLetter, null, 2)}
+            ---
+        `;
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: coverLetterSchema,
+            }
+        });
+
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText);
+    } catch (error) {
+        console.error("Error editing cover letter with Gemini API:", error);
+        throw new Error("Failed to edit cover letter with AI.");
     }
 };

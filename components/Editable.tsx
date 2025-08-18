@@ -10,7 +10,7 @@ type EditableProps = {
   children?: React.ReactNode;
   editMode: boolean;
   onUpdate: (path: string, value: any) => void;
-  onFocus: (path: string | null) => void;
+  onFocus?: (path: string | null) => void;
   editingPath: string | null;
   onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
   isHtml?: boolean;
@@ -70,12 +70,12 @@ const Editable: React.FC<EditableProps> = ({
         }
     }
     // A small delay allows the AI button click to register before we lose focus state
-    setTimeout(() => onFocus(null), 100); 
+    setTimeout(() => onFocus?.(null), 100); 
   };
 
   const handleFocus = () => {
     if (editMode) {
-      onFocus(path);
+      onFocus?.(path);
     }
   };
 
@@ -84,7 +84,9 @@ const Editable: React.FC<EditableProps> = ({
       e.stopPropagation();
       const element = elementRef.current;
       if (element) {
-          onAITooltipOpen(path, element.innerText, element);
+          const selection = window.getSelection();
+          const selectedText = selection ? selection.toString().trim() : '';
+          onAITooltipOpen(path, selectedText || element.innerText, element);
       }
   };
   
@@ -97,24 +99,23 @@ const Editable: React.FC<EditableProps> = ({
     suppressContentEditableWarning: true,
     onFocus: handleFocus,
     onBlur: handleBlur,
-    key: path + displayValue,
+    key: path, // Using just path for key to prevent re-renders on value change from outside
   };
   
   if (isHtml) {
       componentProps.dangerouslySetInnerHTML = { __html: displayValue };
+  } else {
+      componentProps.children = children || displayValue;
   }
-
 
   return (
     <div className="relative group">
-        <Component {...componentProps}>
-            {!isHtml ? children : null}
-        </Component>
-        {editMode && isFocused && (
+        <Component {...componentProps} />
+        {editMode && (isFocused || path.startsWith('coverLetter.')) && (
              <button 
                 onClick={handleAIButtonClick}
                 onMouseDown={(e) => e.preventDefault()} // Prevent this button from stealing focus on click
-                className="absolute top-1/2 -right-1 -translate-y-1/2 translate-x-full p-1 bg-white dark:bg-gray-800 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 text-primary transition-all opacity-0 group-focus-within:opacity-100"
+                className="absolute top-1/2 -right-1 -translate-y-1/2 translate-x-full p-1 bg-white dark:bg-gray-800 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 text-primary transition-all opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100"
                 aria-label="Ask AI to improve this text"
             >
                 <SparklesIcon className="w-4 h-4" />

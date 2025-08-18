@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TemplateIdentifier, ConversationMessage, DesignOptions, TemplateConfig, Language, ResumeData } from '../types';
 import TemplateSwitcher from './TemplateSwitcher';
 import DesignControls from './DesignControls';
@@ -23,19 +23,28 @@ interface ControlPanelProps {
     onProfilePictureChange: (file: File | null) => void;
     isLiveEditingEnabled: boolean;
     onLiveEditingChange: (enabled: boolean) => void;
+    availablePanels?: Panel[];
 }
 
 type Panel = 'AI Chat' | 'Design' | 'Templates';
 
 const ControlPanel: React.FC<ControlPanelProps> = (props) => {
-    const { t } = props;
-    const [activePanel, setActivePanel] = useState<Panel>('AI Chat');
+    const { t, availablePanels = ['AI Chat', 'Design', 'Templates'] } = props;
+    const [activePanel, setActivePanel] = useState<Panel>(availablePanels[0]);
+
+    useEffect(() => {
+        if (!availablePanels.includes(activePanel)) {
+            setActivePanel(availablePanels[0] || 'AI Chat');
+        }
+    }, [availablePanels, activePanel]);
 
     const panelConfig: { id: Panel; icon: React.FC<React.SVGProps<SVGSVGElement>>, labelKey: string }[] = [
         { id: 'AI Chat', icon: MessageSquare, labelKey: 'panelChat' },
         { id: 'Design', icon: Palette, labelKey: 'panelDesign' },
         { id: 'Templates', icon: LayoutGrid, labelKey: 'panelTemplates' },
     ];
+    
+    const visiblePanels = panelConfig.filter(p => availablePanels.includes(p.id));
 
     const renderPanelContent = () => {
         switch (activePanel) {
@@ -81,7 +90,7 @@ const ControlPanel: React.FC<ControlPanelProps> = (props) => {
         <div className="relative w-full h-full flex bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             {/* Vertical Icon Navigation */}
             <nav className="w-16 h-full bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center gap-4 py-4 border-r border-gray-200 dark:border-gray-700">
-                {panelConfig.map(({ id, icon: Icon, labelKey }) => (
+                {visiblePanels.map(({ id, icon: Icon, labelKey }) => (
                      <button
                         key={id}
                         onClick={() => setActivePanel(id)}

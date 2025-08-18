@@ -39,6 +39,18 @@ export const translations: Record<Language, any> = {
     zoomIn: "Zoom Ind",
     zoomOut: "Zoom Ud",
     switchToPreviewToDownload: "Skift venligst til Forhåndsvisning for at downloade som PDF.",
+    resume: "CV",
+    coverLetter: "Ansøgning",
+    
+    // Cover Letter
+    coverLetterTitle: "Skræddersy din jobansøgning",
+    coverLetterSubtitle: "Indsæt jobbeskrivelsen nedenfor, og AI'en vil skrive en ansøgning, der er perfekt tilpasset dit CV.",
+    jobDescriptionLabel: "Jobbeskrivelse",
+    jobDescriptionPlaceholder: "Indsæt hele jobbeskrivelsen her...",
+    coverLetterGenerateButton: "Generer Ansøgning",
+    coverLetterGenerating: "Skriver din skræddersyede ansøgning...",
+    coverLetterError: "Kunne ikke generere ansøgning: {message}",
+    textFormatting: "Tekstformatering",
     
     // Selection Tooltip
     tooltipPlaceholder: "Spørg AI... (f.eks. 'gør dette mere professionelt')",
@@ -90,6 +102,7 @@ export const translations: Record<Language, any> = {
     chatPlaceholder: "f.eks., Gør mit resumé kortere",
     chatWelcome: "Her er det første udkast til dit nye CV. Du kan bruge kontrolpanelet til at redigere det med AI, ændre designet eller skifte skabelon.",
     chatUpdate: "Jeg har opdateret dit CV. Hvad er det næste?",
+    chatUpdateCoverLetter: "Jeg har opdateret din ansøgning. Andre ændringer?",
     chatError: "Beklager, jeg kunne ikke foretage den ændring. Kan du prøve at omformulere?",
 
     // Design Controls
@@ -190,6 +203,18 @@ export const translations: Record<Language, any> = {
     zoomIn: "Zoom In",
     zoomOut: "Zoom Out",
     switchToPreviewToDownload: "Please switch to Preview mode to download as a PDF.",
+    resume: "Resume",
+    coverLetter: "Cover Letter",
+
+    // Cover Letter
+    coverLetterTitle: "Tailor Your Job Application",
+    coverLetterSubtitle: "Paste the job description below, and the AI will write a cover letter perfectly tailored to your resume.",
+    jobDescriptionLabel: "Job Description",
+    jobDescriptionPlaceholder: "Paste the entire job description here...",
+    coverLetterGenerateButton: "Generate Cover Letter",
+    coverLetterGenerating: "Writing your tailored cover letter...",
+    coverLetterError: "Could not generate cover letter: {message}",
+    textFormatting: "Text Formatting",
 
     // Selection Tooltip
     tooltipPlaceholder: "Ask AI... (e.g. 'make this more professional')",
@@ -241,6 +266,7 @@ export const translations: Record<Language, any> = {
     chatPlaceholder: "e.g., Make my summary shorter",
     chatWelcome: "Here is the first draft of your new resume. You can use the control panel to edit it with AI, change the design, or switch templates.",
     chatUpdate: "I've updated your resume. What's next?",
+    chatUpdateCoverLetter: "I've updated your cover letter. Any other changes?",
     chatError: "I'm sorry, I couldn't make that change. Could you try rephrasing?",
 
     // Design Controls
