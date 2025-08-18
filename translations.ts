@@ -31,8 +31,10 @@ export const translations: Record<Language, any> = {
     // Errors
     errorTitle: "Ups! Noget gik galt.",
     errorTryAgain: "Prøv Igen",
-    errorProcessing: "Der opstod en fejl under behandlingen",
-    errorTryDifferentFile: "Prøv en anden fil",
+    errorProcessing: "Der opstod en fejl under behandlingen.",
+    errorTryDifferentFile: "Prøv en anden fil.",
+    errorNetwork: "Der opstod en netværksfejl. Tjek venligst din internetforbindelse og prøv igen.",
+    errorAPI: "Der opstod en uventet fejl hos AI-tjenesten. Prøv venligst igen senere.",
 
 
     // Editor
@@ -139,9 +141,10 @@ export const translations: Record<Language, any> = {
     professional: "Professionel",
     aiTemplates: "Dine AI-skabeloner",
     createWithAI: "Opret med AI",
+    beta: "Beta",
 
     // Template Upload Modal
-    modalHeader: "Opret skabelon med AI",
+    modalHeader: "Opret skabelon med AI (Beta)",
     modalSubtitle: "Upload et billede af et CV for at klone dets stil.",
     modalUploadCTA: "Klik for at uploade",
     modalUploadHint: "PNG eller JPG anbefales",
@@ -203,8 +206,10 @@ export const translations: Record<Language, any> = {
     // Errors
     errorTitle: "Oops! Something went wrong.",
     errorTryAgain: "Try Again",
-    errorProcessing: "An error occurred during processing",
-    errorTryDifferentFile: "Please try a different file",
+    errorProcessing: "An error occurred during processing.",
+    errorTryDifferentFile: "Please try a different file.",
+    errorNetwork: "A network error occurred. Please check your internet connection and try again.",
+    errorAPI: "An unexpected error occurred with the AI service. Please try again later.",
 
     // Editor
     paginationWarningTitle: "Resume Length Warning",
@@ -310,9 +315,10 @@ export const translations: Record<Language, any> = {
     professional: "Professional",
     aiTemplates: "Your AI Templates",
     createWithAI: "Create with AI",
+    beta: "Beta",
     
     // Template Upload Modal
-    modalHeader: "Create Template with AI",
+    modalHeader: "Create Template with AI (Beta)",
     modalSubtitle: "Upload an image of a resume to clone its style.",
     modalUploadCTA: "Click to upload",
     modalUploadHint: "PNG or JPG recommended",

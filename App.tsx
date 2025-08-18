@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppState, ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, ModalState, SectionId, EditorView, CoverLetterData } from './types';
-import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI, generateCoverLetterWithAI, editCoverLetterWithAI } from './services/geminiService';
+import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI, generateCoverLetterWithAI, editCoverLetterWithAI, NetworkError, APIError, ContentError } from './services/geminiService';
 import FileUpload from './components/FileUpload';
 import LoadingIndicator from './components/LoadingIndicator';
 import ErrorMessage from './components/ErrorMessage';
@@ -126,9 +126,10 @@ const App: React.FC = () => {
   const processResume = useCallback(async () => {
     if (!pdfFile) return;
 
+    setAppState(AppState.PROCESSING);
+    setError(null);
+    
     try {
-      setAppState(AppState.PROCESSING);
-      
       setLoadingMessage(t('loadingReading'));
       const fileReader = new FileReader();
       fileReader.readAsArrayBuffer(pdfFile);
@@ -172,7 +173,15 @@ const App: React.FC = () => {
             setAppState(AppState.COMPLETE);
           } catch (e: any) {
             console.error('Error during processing:', e);
-            setError(`${t('errorProcessing')}: ${e.message}. ${t('errorTryAgain')}.`);
+            let userMessage;
+            if (e instanceof NetworkError) {
+                userMessage = t('errorNetwork');
+            } else if (e instanceof APIError) {
+                userMessage = t('errorAPI');
+            } else {
+                userMessage = t('errorProcessing');
+            }
+            setError(`${userMessage} ${t('errorTryAgain')}`);
             setAppState(AppState.ERROR);
           }
         }
@@ -182,10 +191,9 @@ const App: React.FC = () => {
         throw new Error('Failed to read the file.');
       };
 
-    } catch (e: any)
-    {
+    } catch (e: any) {
       console.error('Error processing resume:', e);
-      setError(`${t('errorProcessing')}: ${e.message}. ${t('errorTryDifferentFile')}.`);
+      setError(`${t('errorProcessing')} ${t('errorTryDifferentFile')}.`);
       setAppState(AppState.ERROR);
     }
   }, [pdfFile, language, t, isTailoringEnabled, jobDescription]);
@@ -212,7 +220,13 @@ const App: React.FC = () => {
         }
     } catch (e: any) {
         console.error('Error editing content:', e);
-        setConversation([...newConversation, { role: 'ai', text: t('chatError') }]);
+        let errorMessage = t('chatError');
+        if (e instanceof NetworkError) {
+            errorMessage = t('errorNetwork');
+        } else if (e instanceof APIError) {
+            errorMessage = t('errorAPI');
+        }
+        setConversation([...newConversation, { role: 'ai', text: errorMessage }]);
     } finally {
         setIsChatProcessing(false);
     }
@@ -354,7 +368,13 @@ const App: React.FC = () => {
         }
     } catch (e: any) {
       console.error("Error editing selected text:", e);
-      alert(t('tooltipError'));
+      let errorMessage = t('tooltipError');
+      if (e instanceof NetworkError) {
+          errorMessage = t('errorNetwork');
+      } else if (e instanceof APIError) {
+          errorMessage = t('errorAPI');
+      }
+      alert(errorMessage);
     } finally {
       setSelectionTooltip({ visible: false }); // Hide tooltip after operation
       setEditingPath(null);
@@ -402,8 +422,18 @@ const App: React.FC = () => {
             throw new Error("Failed to read the file for analysis.");
         };
       } catch(e: any) {
-          setError(t('modalError', { message: e.message }));
           console.error("Template analysis error:", e);
+          let errorMessage;
+          if (e instanceof ContentError) {
+              errorMessage = t('modalErrorSuggestion');
+          } else if (e instanceof NetworkError) {
+              errorMessage = t('errorNetwork');
+          } else if (e instanceof APIError) {
+              errorMessage = t('errorAPI');
+          } else {
+              errorMessage = t('modalError', { message: e.message });
+          }
+          setError(errorMessage);
       } finally {
           setIsAnalyzingTemplate(false);
       }
@@ -435,8 +465,16 @@ const App: React.FC = () => {
         };
         setCoverLetter(finalCoverLetter);
     } catch (e: any) {
-        setError(t('coverLetterError', { message: e.message }));
         console.error("Cover letter generation error:", e);
+        let errorMessage;
+        if (e instanceof NetworkError) {
+            errorMessage = t('errorNetwork');
+        } else if (e instanceof APIError) {
+            errorMessage = t('errorAPI');
+        } else {
+            errorMessage = t('coverLetterError', { message: e.message });
+        }
+        setError(errorMessage);
     } finally {
         setIsGeneratingCoverLetter(false);
     }

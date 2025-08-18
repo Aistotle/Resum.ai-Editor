@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { SparklesIcon } from './Icons';
+import { cleanupHtml } from '../utils/getNewItem';
 
 type EditableProps = {
   id?: string;
@@ -59,9 +60,14 @@ const Editable: React.FC<EditableProps> = ({
     const element = elementRef.current;
     if (element) {
         if (isHtml) {
-            const newHTML = element.innerHTML;
-            if (newHTML !== displayValue) {
-                onUpdate(path, newHTML);
+            const rawHTML = element.innerHTML;
+            const cleanHTML = cleanupHtml(rawHTML);
+            if (cleanHTML !== displayValue) {
+                onUpdate(path, cleanHTML);
+            }
+            // Visually update the content to the cleaned version in case of changes
+            if (element.innerHTML !== cleanHTML) {
+                element.innerHTML = cleanHTML;
             }
         } else {
             const newText = element.innerText;

@@ -9,6 +9,12 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
+// Custom error types for more specific error handling
+export class NetworkError extends Error { constructor(message?: string) { super(message); this.name = 'NetworkError'; } }
+export class APIError extends Error { constructor(message?: string) { super(message); this.name = 'APIError'; } }
+export class ContentError extends Error { constructor(message: string) { super(message); this.name = 'ContentError'; } }
+
+
 const resumeSchema = {
     type: Type.OBJECT,
     properties: {
@@ -197,45 +203,45 @@ export const improveResumeWithAI = async (resumeText: string, language: Language
         ? "The entire output, including summary, job descriptions, skills, etc., MUST be in professional, fluent Danish."
         : "The entire output, including summary, job descriptions, skills, etc., MUST be in professional, fluent English.";
 
-    try {
-        const tailoringInstruction = jobDescription
-            ? `
-                You are also an expert recruiter. Your primary task is to tailor this resume for the specific job description provided below.
-                
-                **CRITICAL CONSTRAINT: You MUST NOT invent, fabricate, or exaggerate any experience, skills, or qualifications. Your task is to rephrase and highlight the candidate's *existing* experience from the original text to align with the job description.**
-                - If the original resume has no relevant experience for a key requirement in the job description, DO NOT create it. Instead, focus on transferable skills that *are* present in the original text.
-                - For example, if the resume is for a wizard and the job is for a plumber, you should highlight skills like problem-solving and managing complex systems, but you absolutely MUST NOT claim the wizard has experience with pipes or plumbing fixtures. Be honest and grounded in the source text.
+    const tailoringInstruction = jobDescription
+        ? `
+            You are also an expert recruiter. Your primary task is to tailor this resume for the specific job description provided below.
+            
+            **CRITICAL CONSTRAINT: You MUST NOT invent, fabricate, or exaggerate any experience, skills, or qualifications. Your task is to rephrase and highlight the candidate's *existing* experience from the original text to align with the job description.**
+            - If the original resume has no relevant experience for a key requirement in the job description, DO NOT create it. Instead, focus on transferable skills that *are* present in the original text.
+            - For example, if the resume is for a wizard and the job is for a plumber, you should highlight skills like problem-solving and managing complex systems, but you absolutely MUST NOT claim the wizard has experience with pipes or plumbing fixtures. Be honest and grounded in the source text.
 
-                - Analyze the job description for key skills, technologies, and qualifications.
-                - Rewrite the 'summary' and 'experience' bullet points to directly address these requirements using evidence from the original resume.
-                - Emphasize achievements and skills from the original resume that are most relevant to this specific job.
+            - Analyze the job description for key skills, technologies, and qualifications.
+            - Rewrite the 'summary' and 'experience' bullet points to directly address these requirements using evidence from the original resume.
+            - Emphasize achievements and skills from the original resume that are most relevant to this specific job.
 
-                **Job Description to Target:**
-                ---
-                ${jobDescription}
-                ---
-            `
-            : `
-                Your task is to transform raw resume text into a professional, high-quality data structure.
-            `;
-        
-        const prompt = `
-            You are an expert resume writer and editor. ${tailoringInstruction}
-
-            **PRIMARY GOAL: Create concise and impactful content suitable for a 1-2 page resume.**
-            - **LANGUAGE REQUIREMENT: ${languageInstruction}**
-            - Focus on clarity, strong action verbs, and quantifiable achievements.
-            - Summarize lengthy paragraphs into crisp, effective bullet points or summaries.
-            - Do NOT worry about the final layout or page count; your focus is purely on generating the best possible content. The application will handle the final formatting.
-            - If information like a website or LinkedIn is missing, return an empty string for that field.
-            - Return a single, valid JSON object adhering to the provided schema. Do not include any text or markdown outside the JSON.
-
-            Raw Resume Text:
+            **Job Description to Target:**
             ---
-            ${resumeText}
+            ${jobDescription}
             ---
+        `
+        : `
+            Your task is to transform raw resume text into a professional, high-quality data structure.
         `;
+    
+    const prompt = `
+        You are an expert resume writer and editor. ${tailoringInstruction}
 
+        **PRIMARY GOAL: Create concise and impactful content suitable for a 1-2 page resume.**
+        - **LANGUAGE REQUIREMENT: ${languageInstruction}**
+        - Focus on clarity, strong action verbs, and quantifiable achievements.
+        - Summarize lengthy paragraphs into crisp, effective bullet points or summaries.
+        - Do NOT worry about the final layout or page count; your focus is purely on generating the best possible content. The application will handle the final formatting.
+        - If information like a website or LinkedIn is missing, return an empty string for that field.
+        - Return a single, valid JSON object adhering to the provided schema. Do not include any text or markdown outside the JSON.
+
+        Raw Resume Text:
+        ---
+        ${resumeText}
+        ---
+    `;
+
+    try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -248,10 +254,12 @@ export const improveResumeWithAI = async (resumeText: string, language: Language
         const jsonText = response.text.trim();
         const parsedData: ResumeData = JSON.parse(jsonText);
         return parsedData;
-
-    } catch (error) {
-        console.error("Error calling Gemini API:", error);
-        throw new Error("Failed to improve resume with AI. The model may have returned an unexpected format.");
+    } catch (error: any) {
+        console.error("Error calling Gemini API in improveResumeWithAI:", error);
+        if (error.message.toLowerCase().includes('fetch')) {
+            throw new NetworkError('Failed to fetch from Gemini API.');
+        }
+        throw new APIError(error.message);
     }
 };
 
@@ -260,29 +268,29 @@ export const editResumeWithAI = async (currentResume: ResumeData, instruction: s
         ? "You MUST conduct this conversation and make all resume edits in professional, fluent Danish."
         : "You MUST conduct this conversation and make all resume edits in professional, fluent English.";
 
+    const prompt = `
+        You are a resume editing assistant. Your task is to apply the user's requested change to their resume content.
+
+        **PRIMARY GOAL: Intelligently apply the user's edit while maintaining overall conciseness.**
+        - **LANGUAGE REQUIREMENT: ${languageInstruction}**
+        - If the user asks to add content, do so, but ensure it is well-written and professional.
+        - If the user asks to shorten or change something, focus on making that specific edit effectively.
+        - Do not worry about the final layout or page count. The application's layout engine will handle fitting the content.
+        - You MUST return the **complete, updated resume** as a single, valid JSON object that adheres to the provided schema.
+        - Do not include any text or markdown formatting outside of the JSON object.
+
+        User's Instruction:
+        ---
+        ${instruction}
+        ---
+
+        Current Resume JSON:
+        ---
+        ${JSON.stringify(currentResume, null, 2)}
+        ---
+    `;
+    
     try {
-        const prompt = `
-            You are a resume editing assistant. Your task is to apply the user's requested change to their resume content.
-
-            **PRIMARY GOAL: Intelligently apply the user's edit while maintaining overall conciseness.**
-            - **LANGUAGE REQUIREMENT: ${languageInstruction}**
-            - If the user asks to add content, do so, but ensure it is well-written and professional.
-            - If the user asks to shorten or change something, focus on making that specific edit effectively.
-            - Do not worry about the final layout or page count. The application's layout engine will handle fitting the content.
-            - You MUST return the **complete, updated resume** as a single, valid JSON object that adheres to the provided schema.
-            - Do not include any text or markdown formatting outside of the JSON object.
-
-            User's Instruction:
-            ---
-            ${instruction}
-            ---
-
-            Current Resume JSON:
-            ---
-            ${JSON.stringify(currentResume, null, 2)}
-            ---
-        `;
-        
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -295,9 +303,12 @@ export const editResumeWithAI = async (currentResume: ResumeData, instruction: s
         const jsonText = response.text.trim();
         const parsedData: ResumeData = JSON.parse(jsonText);
         return parsedData;
-    } catch (error) {
-        console.error("Error editing with Gemini API:", error);
-        throw new Error("Failed to edit resume with AI. The model may have returned an unexpected format.");
+    } catch (error: any) {
+        console.error("Error calling Gemini API in editResumeWithAI:", error);
+        if (error.message.toLowerCase().includes('fetch')) {
+            throw new NetworkError('Failed to fetch from Gemini API.');
+        }
+        throw new APIError(error.message);
     }
 };
 
@@ -310,22 +321,22 @@ export const editSelectedTextWithAI = async (
         ? "The final output MUST be a single string written in professional, fluent Danish."
         : "The final output MUST be a single string written in professional, fluent English.";
 
+    const prompt = `
+        You are an expert resume editor. A user has selected a piece of text from their resume and wants you to improve it based on their instruction.
+
+        **PRIMARY DIRECTIVE: Rewrite the text as requested and return ONLY the new text.**
+        - **LANGUAGE REQUIREMENT: ${languageInstruction}**
+        - Do not add any extra explanations, formatting, markdown, or quotation marks around the text.
+        - Your entire response should be just the rewritten string.
+
+        **User's Instruction:**
+        "${instruction}"
+
+        **Original Text to Improve:**
+        "${selectedText}"
+    `;
+
     try {
-        const prompt = `
-            You are an expert resume editor. A user has selected a piece of text from their resume and wants you to improve it based on their instruction.
-
-            **PRIMARY DIRECTIVE: Rewrite the text as requested and return ONLY the new text.**
-            - **LANGUAGE REQUIREMENT: ${languageInstruction}**
-            - Do not add any extra explanations, formatting, markdown, or quotation marks around the text.
-            - Your entire response should be just the rewritten string.
-
-            **User's Instruction:**
-            "${instruction}"
-
-            **Original Text to Improve:**
-            "${selectedText}"
-        `;
-
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -337,10 +348,12 @@ export const editSelectedTextWithAI = async (
           return selectedText;
         }
         return newText;
-
-    } catch (error) {
-        console.error("Error editing selected text with Gemini API:", error);
-        throw new Error("Failed to edit selected text with AI.");
+    } catch (error: any) {
+        console.error("Error calling Gemini API in editSelectedTextWithAI:", error);
+        if (error.message.toLowerCase().includes('fetch')) {
+            throw new NetworkError('Failed to fetch from Gemini API.');
+        }
+        throw new APIError(error.message);
     }
 };
 
@@ -407,9 +420,13 @@ export const analyzeResumeTemplate = async (imageDataUrl: string, fileName: stri
         
         return parsedData;
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error analyzing template with Gemini API:", error);
-        throw new Error("Failed to analyze resume template. The AI may have struggled with this design. Try a clearer image.");
+        if (error.message.toLowerCase().includes('fetch')) {
+            throw new NetworkError('Failed to fetch from Gemini API.');
+        }
+        // This is a specific error where the AI might struggle with an image.
+        throw new ContentError("Failed to analyze resume template. The AI may have struggled with this design. Try a clearer image.");
     }
 };
 
@@ -422,30 +439,30 @@ export const generateCoverLetterWithAI = async (
         ? "The entire output MUST be in professional, fluent Danish."
         : "The entire output MUST be in professional, fluent English.";
 
+    const prompt = `
+        You are a professional career coach and expert cover letter writer. Your task is to generate the content for a cover letter based on a candidate's resume and a job description.
+
+        **PRIMARY GOAL: Create a tailored and impactful cover letter and return it as a structured JSON object.**
+        - **LANGUAGE REQUIREMENT: ${languageInstruction}**
+        - Analyze the job description to find the company's name, address, and potentially a hiring manager's name and title. If not available, use professional placeholders.
+        - Generate today's date in a 'Month Day, Year' format.
+        - Create a compelling subject line for the application.
+        - Write the main body of the letter. It must be a single string containing HTML line breaks (<br />). The body must be structured with a salutation (e.g., "Dear Hiring Manager,"), 3-4 paragraphs highlighting the most relevant skills from the resume that match the job description, and a strong concluding paragraph with a professional sign-off (e.g., "Sincerely,").
+        - Do not include the sender's name or contact info in the body's sign-off; that will be handled separately by the application. Just end with the closing like "Sincerely,".
+        - Return ONLY the valid JSON object.
+
+        **Candidate's Resume (for context):**
+        ---
+        ${JSON.stringify(resumeData, null, 2)}
+        ---
+
+        **Job Description:**
+        ---
+        ${jobDescription}
+        ---
+    `;
+
     try {
-        const prompt = `
-            You are a professional career coach and expert cover letter writer. Your task is to generate the content for a cover letter based on a candidate's resume and a job description.
-
-            **PRIMARY GOAL: Create a tailored and impactful cover letter and return it as a structured JSON object.**
-            - **LANGUAGE REQUIREMENT: ${languageInstruction}**
-            - Analyze the job description to find the company's name, address, and potentially a hiring manager's name and title. If not available, use professional placeholders.
-            - Generate today's date in a 'Month Day, Year' format.
-            - Create a compelling subject line for the application.
-            - Write the main body of the letter. It must be a single string containing HTML line breaks (<br />). The body must be structured with a salutation (e.g., "Dear Hiring Manager,"), 3-4 paragraphs highlighting the most relevant skills from the resume that match the job description, and a strong concluding paragraph with a professional sign-off (e.g., "Sincerely,").
-            - Do not include the sender's name or contact info in the body's sign-off; that will be handled separately by the application. Just end with the closing like "Sincerely,".
-            - Return ONLY the valid JSON object.
-
-            **Candidate's Resume (for context):**
-            ---
-            ${JSON.stringify(resumeData, null, 2)}
-            ---
-
-            **Job Description:**
-            ---
-            ${jobDescription}
-            ---
-        `;
-
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -457,10 +474,12 @@ export const generateCoverLetterWithAI = async (
 
         const jsonText = response.text.trim();
         return JSON.parse(jsonText);
-
-    } catch (error) {
-        console.error("Error generating cover letter with Gemini API:", error);
-        throw new Error("Failed to generate cover letter with AI. Please try again.");
+    } catch (error: any) {
+        console.error("Error calling Gemini API in generateCoverLetterWithAI:", error);
+        if (error.message.toLowerCase().includes('fetch')) {
+            throw new NetworkError('Failed to fetch from Gemini API.');
+        }
+        throw new APIError(error.message);
     }
 };
 
@@ -473,27 +492,27 @@ export const editCoverLetterWithAI = async (
         ? "You MUST apply all edits and return the final text in professional, fluent Danish."
         : "You MUST apply all edits and return the final text in professional,fluent English.";
 
+    const prompt = `
+        You are a text editing assistant. Your task is to apply the user's requested change to the provided cover letter JSON data.
+
+        **PRIMARY GOAL: Intelligently apply the user's edit while maintaining a professional and consistent tone.**
+        - **LANGUAGE REQUIREMENT: ${languageInstruction}**
+        - The user's instruction will typically apply to the 'body' of the letter, but you should be prepared to edit any field if requested (e.g., "Change the subject line to...").
+        - You MUST return the **complete, updated cover letter** as a single, valid JSON object that adheres to the provided schema.
+        - Ensure the 'body' string maintains its HTML line breaks (<br />).
+
+        **User's Instruction:**
+        ---
+        ${instruction}
+        ---
+
+        **Current Cover Letter JSON:**
+        ---
+        ${JSON.stringify(currentCoverLetter, null, 2)}
+        ---
+    `;
+    
     try {
-        const prompt = `
-            You are a text editing assistant. Your task is to apply the user's requested change to the provided cover letter JSON data.
-
-            **PRIMARY GOAL: Intelligently apply the user's edit while maintaining a professional and consistent tone.**
-            - **LANGUAGE REQUIREMENT: ${languageInstruction}**
-            - The user's instruction will typically apply to the 'body' of the letter, but you should be prepared to edit any field if requested (e.g., "Change the subject line to...").
-            - You MUST return the **complete, updated cover letter** as a single, valid JSON object that adheres to the provided schema.
-            - Ensure the 'body' string maintains its HTML line breaks (<br />).
-
-            **User's Instruction:**
-            ---
-            ${instruction}
-            ---
-
-            **Current Cover Letter JSON:**
-            ---
-            ${JSON.stringify(currentCoverLetter, null, 2)}
-            ---
-        `;
-        
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -505,8 +524,11 @@ export const editCoverLetterWithAI = async (
 
         const jsonText = response.text.trim();
         return JSON.parse(jsonText);
-    } catch (error) {
-        console.error("Error editing cover letter with Gemini API:", error);
-        throw new Error("Failed to edit cover letter with AI.");
+    } catch (error: any) {
+        console.error("Error calling Gemini API in editCoverLetterWithAI:", error);
+        if (error.message.toLowerCase().includes('fetch')) {
+            throw new NetworkError('Failed to fetch from Gemini API.');
+        }
+        throw new APIError(error.message);
     }
 };

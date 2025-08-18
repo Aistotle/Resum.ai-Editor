@@ -109,9 +109,10 @@ const TemplateSwitcher: React.FC<TemplateSwitcherProps> = ({ selectedTemplate, o
             <div className="pt-4 mt-auto border-t border-gray-200 dark:border-gray-700">
                  <button
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full bg-gradient-to-r from-teal-400 to-blue-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-400 to-blue-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                  >
                     {t('createWithAI')}
+                    <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-2.5 py-0.5 rounded-full">{t('beta')}</span>
                  </button>
             </div>
             

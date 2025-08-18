@@ -2,6 +2,7 @@ import React from 'react';
 import { ResumeData, SectionId } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import { FileText, Bold, Italic, Underline, List, ListOrdered } from '../Icons';
+import { cleanupHtml } from '../../utils/getNewItem';
 
 interface SummaryEditorProps {
     data: ResumeData;
@@ -50,7 +51,16 @@ const SummaryEditor: React.FC<SummaryEditorProps> = ({ data, onUpdate, t, onReor
                 <div
                     contentEditable
                     suppressContentEditableWarning
-                    onBlur={(e) => onUpdate('summary', e.currentTarget.innerHTML)}
+                    onBlur={(e) => {
+                        const rawHTML = e.currentTarget.innerHTML;
+                        const cleanHTML = cleanupHtml(rawHTML);
+                        if (data.summary !== cleanHTML) {
+                           onUpdate('summary', cleanHTML);
+                        }
+                        if (e.currentTarget.innerHTML !== cleanHTML) {
+                            e.currentTarget.innerHTML = cleanHTML;
+                        }
+                    }}
                     className="p-3 min-h-[150px] focus:outline-none prose dark:prose-invert prose-sm max-w-none"
                     dangerouslySetInnerHTML={{ __html: data.summary }}
                 />
