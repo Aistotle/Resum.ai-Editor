@@ -1,6 +1,4 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import { ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, SectionId, EditorView, CoverLetterData } from '../types';
 import ResumeTemplate from './ResumeTemplate';
 import TemplateClassic from './TemplateClassic';
@@ -14,6 +12,7 @@ import SelectionTooltip from './SelectionTooltip';
 import ZoomControls from './ZoomControls';
 import EditorSidebar from './EditorSidebar';
 import CoverLetterEditor from './CoverLetterEditor';
+import { exportToPdf } from '../services/pdfService';
 
 
 interface ResumeEditorProps {
@@ -91,33 +90,13 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
 
 
     useEffect(() => {
-        const generatePdf = async () => {
-            const container = resumeContainerRef.current;
-            if (!container) {
-                onDownloadComplete();
-                return;
-            }
-
-            const pages = container.querySelectorAll('.resume-page');
-            if (pages.length === 0) {
-                onDownloadComplete();
-                return;
-            }
-
+        const doGeneratePdf = async () => {
             try {
-                const pdf = new jsPDF('p', 'in', 'letter');
-                const pdfWidth = 8.5;
-                const pdfHeight = 11;
-
-                for (let i = 0; i < pages.length; i++) {
-                    const page = pages[i] as HTMLElement;
-                    const canvas = await html2canvas(page, { scale: 2.5, useCORS: true });
-                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                    if (i > 0) pdf.addPage();
-                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                }
-                const docName = editorView === EditorView.RESUME ? "Resume" : "Cover_Letter";
-                pdf.save(`${resumeData.name.replace(/\s/g, '_')}_${docName}.pdf`);
+                await exportToPdf(
+                    editorView,
+                    resumeContainerRef,
+                    resumeData
+                );
             } catch (error) {
                 console.error("Failed to generate PDF:", error);
                 alert("Sorry, there was an error creating the PDF. Please try again.");
@@ -127,9 +106,10 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
         };
 
         if (isDownloading) {
-            setTimeout(generatePdf, 100); // Small delay to allow UI to update to "Downloading..."
+            // Small delay to allow UI to update to "Downloading..."
+            setTimeout(doGeneratePdf, 100);
         }
-    }, [isDownloading, onDownloadComplete, resumeData.name, editorView]);
+    }, [isDownloading, onDownloadComplete, resumeData, editorView]);
 
     const renderPreview = () => {
         const templateProps = {
