@@ -13,86 +13,98 @@ interface PrintProps {
     t: (key: string) => string;
 }
 
-export const exportToPdf = (printProps: PrintProps): void => {
-    // 1. Create a hidden iframe
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    iframe.title = 'Print Content';
-
-    document.body.appendChild(iframe);
-
-    try {
-        const printDoc = iframe.contentDocument;
-        if (!printDoc || !iframe.contentWindow) {
-            throw new Error("Could not access iframe document.");
-        }
-        
-        // 2. Copy essential styles and scripts from main document
-        const headNodes = document.head.querySelectorAll('link, style, script');
-        headNodes.forEach(node => {
-            if ( (node.nodeName === 'LINK' && (node as HTMLLinkElement).href.includes('fonts.googleapis.com')) || 
-                 (node.nodeName === 'SCRIPT' && (node as HTMLScriptElement).src.includes('tailwindcss')) ||
-                 (node.nodeName === 'SCRIPT' && node.textContent?.includes('tailwind.config'))
-            ) {
-                 printDoc.head.appendChild(node.cloneNode(true));
-            }
-        });
-        
-        // 3. Inject print-specific CSS
-        const printStyles = printDoc.createElement('style');
-        printStyles.textContent = `
-            @page {
-                size: A4;
-                margin: 0; 
-            }
-            html, body {
-                background-color: #fff !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                padding: 0;
-            }
-            .resume-page {
-                break-after: page;
-                margin: 0 !important;
-                box-shadow: none !important;
-                border: none !important;
-                width: 100% !important;
-                height: 100% !important;
-                max-width: none !important;
-                min-height: 0 !important;
-            }
-        `;
-        printDoc.head.appendChild(printStyles);
-
-        // 4. Create a mount point and render the document synchronously
-        const mountPoint = printDoc.createElement('div');
-        printDoc.body.appendChild(mountPoint);
-        const root = createRoot(mountPoint);
-        
-        flushSync(() => {
-            root.render(React.createElement(PrintableDocument, printProps));
-        });
-
-        // 5. Trigger print dialog
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        
-    } catch(e) {
-      console.error("PDF generation failed:", e);
-      alert("Sorry, there was an error preparing the document for printing. Please check the console for details and try again.");
-    } finally {
-        // 6. Cleanup after a delay. The print dialog is blocking. 
-        // Removing the iframe too quickly can cause issues with the browser's print preview.
-        setTimeout(() => {
-            if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
-            }
-        }, 500);
+export const exportToPdf = (printProps: PrintProps, onComplete: () => void): void => {
+    // 1. Open a new window immediately to retain the user-initiated action context.
+    const printWindow = window.open('', '_blank', 'width=816,height=1056');
+    if (!printWindow) {
+        alert("Could not open print window. Please disable your pop-up blocker for this site.");
+        onComplete();
+        return;
     }
+
+    const printDoc = printWindow.document;
+    printDoc.write('<!DOCTYPE html><html><head><title>Preparing Document...</title></head><body></body></html>');
+    
+    // 2. Clone all stylesheets from the main document to the new window.
+    document.head.querySelectorAll('style, link[rel="stylesheet"]').forEach(node => {
+        printDoc.head.appendChild(node.cloneNode(true));
+    });
+
+    // 3. Inject print-specific CSS.
+    const printStyles = printDoc.createElement('style');
+    printStyles.textContent = `
+        @page { size: A4; margin: 0; }
+        body { margin: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .resume-page {
+            page-break-after: always;
+            margin: 0 auto !important;
+            box-shadow: none !important;
+            border: none !important;
+            overflow: hidden;
+        }
+        .resume-page:last-child { page-break-after: avoid; }
+    `;
+    printDoc.head.appendChild(printStyles);
+    
+    // 4. Set theme for consistency.
+    printDoc.documentElement.lang = document.documentElement.lang;
+    if (document.documentElement.classList.contains('dark')) {
+        printDoc.documentElement.classList.add('dark');
+    }
+
+    // 5. Render the React component into the new window's body.
+    const mountPoint = printDoc.body;
+    const root = createRoot(mountPoint);
+    flushSync(() => {
+        root.render(React.createElement(PrintableDocument, printProps));
+    });
+    
+    // 6. Set up a robust cleanup mechanism.
+    let printed = false;
+    const cleanup = () => {
+        if (!printed) {
+            printed = true;
+            root.unmount();
+            printWindow.close();
+            onComplete();
+        }
+    };
+    printWindow.onafterprint = cleanup;
+    printWindow.onbeforeunload = cleanup; // Handle if the user closes the window manually.
+
+    // 7. Wait for all assets (fonts, images) to load before printing.
+    const waitForAssetsAndPrint = async () => {
+        try {
+            await (printDoc as any).fonts.ready;
+            
+            const imagePromises = Array.from(printDoc.images)
+                .filter(img => !img.complete)
+                .map(img => new Promise<void>(resolve => {
+                    img.onload = img.onerror = () => resolve();
+                }));
+
+            await Promise.all(imagePromises);
+
+            // All assets are loaded, now we can finalize the document and print.
+            printDoc.close(); // Finalizes the document stream. Important.
+            
+            setTimeout(() => {
+                printWindow.focus();
+                // Attempt execCommand first, fallback to print()
+                const printedSuccessfully = printWindow.document.execCommand('print', true, undefined);
+                if (!printedSuccessfully) {
+                   printWindow.print();
+                }
+                
+                // If the user cancels the print dialog, `onafterprint` will still fire and call cleanup.
+            }, 300); // A generous delay for the final render pass.
+
+        } catch (err) {
+            console.error("Error preparing document for printing:", err);
+            alert("An error occurred preparing the PDF. Some assets may not have loaded correctly.");
+            cleanup();
+        }
+    };
+    
+    waitForAssetsAndPrint();
 };

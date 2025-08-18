@@ -440,24 +440,22 @@ const App: React.FC = () => {
       }
   };
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     if (!improvedResume) return;
 
     setIsDownloading(true);
     
     exportToPdf({
-        editorView,
-        resumeData: improvedResume,
-        coverLetterData: coverLetter,
-        selectedTemplate,
-        designOptions,
-        t,
+      editorView,
+      resumeData: improvedResume,
+      coverLetterData: coverLetter,
+      selectedTemplate,
+      designOptions,
+      t,
+    }, () => {
+      setIsDownloading(false);
     });
-
-    // The print dialog is blocking, so this will run after it's closed.
-    // A timeout helps prevent UI jank.
-    setTimeout(() => setIsDownloading(false), 500);
-  };
+  }, [improvedResume, editorView, coverLetter, selectedTemplate, designOptions, t]);
 
   const handleZoomChange = (newZoom: number) => {
     setZoomLevel(newZoom);
