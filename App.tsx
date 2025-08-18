@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppState, ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, ModalState, SectionId, EditorView, CoverLetterData } from './types';
 import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI, generateCoverLetterWithAI, editCoverLetterWithAI, NetworkError, APIError, ContentError } from './services/geminiService';
+import { exportToPdf } from './services/pdfService';
 import FileUpload from './components/FileUpload';
 import LoadingIndicator from './components/LoadingIndicator';
 import ErrorMessage from './components/ErrorMessage';
@@ -440,7 +441,22 @@ const App: React.FC = () => {
   };
 
   const handleDownload = () => {
+    if (!improvedResume) return;
+
     setIsDownloading(true);
+    
+    exportToPdf({
+        editorView,
+        resumeData: improvedResume,
+        coverLetterData: coverLetter,
+        selectedTemplate,
+        designOptions,
+        t,
+    });
+
+    // The print dialog is blocking, so this will run after it's closed.
+    // A timeout helps prevent UI jank.
+    setTimeout(() => setIsDownloading(false), 500);
   };
 
   const handleZoomChange = (newZoom: number) => {
@@ -547,8 +563,6 @@ const App: React.FC = () => {
             onOpenModal={handleOpenModal}
             onRemoveItem={handleRemoveItem}
             onReorderItem={handleReorderItem}
-            isDownloading={isDownloading}
-            onDownloadComplete={() => setIsDownloading(false)}
             hasOverflow={hasOverflow}
             onOverflowChange={setHasOverflow}
             customTemplates={customTemplates}

@@ -12,7 +12,6 @@ import SelectionTooltip from './SelectionTooltip';
 import ZoomControls from './ZoomControls';
 import EditorSidebar from './EditorSidebar';
 import CoverLetterEditor from './CoverLetterEditor';
-import { exportToPdf } from '../services/pdfService';
 
 
 interface ResumeEditorProps {
@@ -28,8 +27,6 @@ interface ResumeEditorProps {
     onOpenModal: (path: keyof ResumeData, index?: number) => void;
     onRemoveItem: (path: keyof ResumeData, index: number) => void;
     onReorderItem: (path: keyof ResumeData, oldIndex: number, newIndex: number) => void;
-    isDownloading: boolean;
-    onDownloadComplete: () => void;
     hasOverflow: boolean;
     onOverflowChange: (overflow: boolean) => void;
     customTemplates: TemplateConfig[];
@@ -69,7 +66,7 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
     const controlPanelRef = useRef<HTMLElement>(null);
 
     const { 
-        isDownloading, onDownloadComplete, resumeData, hasOverflow, selectedTemplate, t, 
+        hasOverflow, selectedTemplate, t, 
         selectionTooltip, onSelectionTooltipChange, onSelectionEdit,
         zoomLevel, isControlPanelOpen, editorView, onEditorViewChange
     } = props;
@@ -87,29 +84,6 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
             document.removeEventListener('mousedown', handleMouseDown);
         };
     }, [handleMouseDown]);
-
-
-    useEffect(() => {
-        const doGeneratePdf = async () => {
-            try {
-                await exportToPdf(
-                    editorView,
-                    resumeContainerRef,
-                    resumeData
-                );
-            } catch (error) {
-                console.error("Failed to generate PDF:", error);
-                alert("Sorry, there was an error creating the PDF. Please try again.");
-            } finally {
-                onDownloadComplete();
-            }
-        };
-
-        if (isDownloading) {
-            // Small delay to allow UI to update to "Downloading..."
-            setTimeout(doGeneratePdf, 100);
-        }
-    }, [isDownloading, onDownloadComplete, resumeData, editorView]);
 
     const renderPreview = () => {
         const templateProps = {
