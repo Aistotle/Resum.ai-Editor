@@ -51,7 +51,15 @@ const Header: React.FC<HeaderProps> = ({ onReset, isEditorView, theme, onThemeCh
                             <PanelLeft className="w-5 h-5" />
                         </button>
                     )}
-                    <img src="/owl-icon-png.png" alt="Obedai Logo" className="w-8 h-8" />
+                    <svg 
+                        className="w-8 h-8 text-primary dark:text-secondary" 
+                        viewBox="0 0 100 100" 
+                        fill="currentColor" 
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-label="Obedai Logo"
+                    >
+                        <path d="M50 10C27.9086 10 10 27.9086 10 50C10 72.0914 27.9086 90 50 90C72.0914 90 90 72.0914 90 50C90 27.9086 72.0914 10 50 10ZM50 75C36.1929 75 25 63.8071 25 50C25 36.1929 36.1929 25 50 25C63.8071 25 75 36.1929 75 50C75 63.8071 63.8071 75 50 75Z" />
+                    </svg>
                     <h1 className="text-xl sm:text-2xl font-bold text-neutral dark:text-white tracking-tight hidden sm:block">
                         Obedai
                     </h1>
