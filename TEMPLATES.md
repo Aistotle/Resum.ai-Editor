@@ -1,6 +1,6 @@
 # Guide: Creating New Resume Templates
 
-This guide provides a step-by-step process for creating and integrating new resume templates into the AI Resume Beautifier application. To ensure full compatibility with features like live editing, dynamic styling, and smart pagination, new templates must adhere to the structure and responsibilities outlined below.
+This guide provides a step-by-step process for creating and integrating new resume templates into the Obedai application. To ensure full compatibility with features like live editing, dynamic styling, and smart pagination, new templates must adhere to the structure and responsibilities outlined below.
 
 ## 1. File Structure
 

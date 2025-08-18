@@ -1,53 +1,174 @@
-import React from 'react';
-import { Bold, Italic, Underline, List, ListOrdered, AlignLeft, AlignCenter, AlignRight } from '../Icons';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Bold, Italic, Underline, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Type, Heading1, Heading2 } from '../Icons';
 
 interface CoverLetterSidebarProps {
     t: (key: string) => string;
 }
 
-const SectionWrapper: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
-    <section>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">{title}</h2>
-        <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-4">
-            {children}
-        </div>
-    </section>
-);
+const fonts = ['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'Georgia', 'Times New Roman', 'Arial', 'Verdana'];
+const fontSizes: { [key: string]: string } = {
+    '1': '8pt',
+    '2': '10pt',
+    '3': '12pt',
+    '4': '14pt',
+    '5': '18pt',
+    '6': '24pt',
+    '7': '36pt',
+};
+const blockFormats: { [key: string]: string } = {
+    'p': 'Paragraph',
+    'h1': 'Heading 1',
+    'h2': 'Heading 2',
+};
 
-const RTEToolbarButton: React.FC<{ onClick: () => void, children: React.ReactNode, 'aria-label': string }> = ({ onClick, children, 'aria-label': ariaLabel }) => (
+// Helper to convert rgb() color to hex
+const rgbToHex = (rgb: string) => {
+    if (!rgb || !rgb.startsWith('rgb')) return '#000000';
+    const match = rgb.match(/(\d+),\s*(\d+),\s*(\d+)/);
+    if (!match) return '#000000';
+    const [, r, g, b] = match.map(Number);
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+};
+
+const ToolbarButton: React.FC<{ onClick: () => void, children: React.ReactNode, 'aria-label': string, isActive?: boolean }> = ({ onClick, children, 'aria-label': ariaLabel, isActive }) => (
     <button
-      onClick={onClick}
-      onMouseDown={e => e.preventDefault()} // Prevent editor from losing focus
-      className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
-      aria-label={ariaLabel}
       type="button"
+      onClick={onClick}
+      onMouseDown={e => e.preventDefault()}
+      className={`p-2 rounded-md transition-colors ${isActive ? 'bg-blue-100 dark:bg-blue-800 text-primary' : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
+      aria-label={ariaLabel}
+      aria-pressed={isActive}
     >
       {children}
     </button>
 );
 
+const SelectControl: React.FC<{ value: string, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void, children: React.ReactNode, icon?: React.FC<React.SVGProps<SVGSVGElement>> }> = ({ value, onChange, children, icon: Icon }) => (
+    <div className="relative flex items-center w-full">
+        {Icon && <Icon className="w-4 h-4 absolute left-3 text-gray-500 pointer-events-none" />}
+        <select
+            value={value}
+            onChange={onChange}
+            onMouseDown={e => e.preventDefault()}
+            className={`w-full appearance-none p-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:outline-none text-sm ${Icon ? 'pl-9' : ''}`}
+        >
+            {children}
+        </select>
+         <svg className="w-4 h-4 absolute right-3 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+    </div>
+);
+
+
 const CoverLetterSidebar: React.FC<CoverLetterSidebarProps> = ({ t }) => {
+    const [formats, setFormats] = useState({
+        bold: false, italic: false, underline: false,
+        ol: false, ul: false,
+        justifyLeft: true, justifyCenter: false, justifyRight: false,
+        fontName: 'serif',
+        fontSize: '3',
+        formatBlock: 'p',
+        foreColor: '#000000',
+    });
+
+    const updateToolbarState = useCallback(() => {
+        setFormats({
+            bold: document.queryCommandState('bold'),
+            italic: document.queryCommandState('italic'),
+            underline: document.queryCommandState('underline'),
+            ol: document.queryCommandState('insertOrderedList'),
+            ul: document.queryCommandState('insertUnorderedList'),
+            justifyLeft: document.queryCommandState('justifyLeft'),
+            justifyCenter: document.queryCommandState('justifyCenter'),
+            justifyRight: document.queryCommandState('justifyRight'),
+            fontName: document.queryCommandValue('fontName').replace(/['"]/g, '') || 'serif',
+            fontSize: document.queryCommandValue('fontSize') || '3',
+            formatBlock: document.queryCommandValue('formatBlock') || 'p',
+            foreColor: rgbToHex(document.queryCommandValue('foreColor')),
+        });
+    }, []);
+
+    useEffect(() => {
+        const editor = document.getElementById('cover-letter-body-editor');
+        if (editor) {
+            const listener = () => updateToolbarState();
+            document.addEventListener('selectionchange', listener);
+            editor.addEventListener('keyup', listener);
+            editor.addEventListener('mouseup', listener); // Use mouseup to capture final state after click-drag
+            
+            // Initial check
+            updateToolbarState();
+
+            return () => {
+                document.removeEventListener('selectionchange', listener);
+                editor.removeEventListener('keyup', listener);
+                editor.removeEventListener('mouseup', listener);
+            };
+        }
+    }, [updateToolbarState]);
     
     const handleFormat = (command: string, value?: string) => {
         document.execCommand(command, false, value);
+        updateToolbarState();
     };
+
+    const ControlSection: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
+        <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400">{title}</h3>
+            {children}
+        </div>
+    );
 
     return (
         <div className="p-6 space-y-8">
-            <SectionWrapper title={t('textFormatting')}>
-                <div className="flex flex-wrap items-center gap-1 p-1 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-md">
-                    <RTEToolbarButton onClick={() => handleFormat('bold')} aria-label="Bold"><Bold className="w-5 h-5" /></RTEToolbarButton>
-                    <RTEToolbarButton onClick={() => handleFormat('italic')} aria-label="Italic"><Italic className="w-5 h-5" /></RTEToolbarButton>
-                    <RTEToolbarButton onClick={() => handleFormat('underline')} aria-label="Underline"><Underline className="w-5 h-5" /></RTEToolbarButton>
-                    <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
-                    <RTEToolbarButton onClick={() => handleFormat('insertUnorderedList')} aria-label="Bulleted List"><List className="w-5 h-5" /></RTEToolbarButton>
-                    <RTEToolbarButton onClick={() => handleFormat('insertOrderedList')} aria-label="Numbered List"><ListOrdered className="w-5 h-5" /></RTEToolbarButton>
-                    <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
-                    <RTEToolbarButton onClick={() => handleFormat('justifyLeft')} aria-label="Align Left"><AlignLeft className="w-5 h-5" /></RTEToolbarButton>
-                    <RTEToolbarButton onClick={() => handleFormat('justifyCenter')} aria-label="Align Center"><AlignCenter className="w-5 h-5" /></RTEToolbarButton>
-                    <RTEToolbarButton onClick={() => handleFormat('justifyRight')} aria-label="Align Right"><AlignRight className="w-5 h-5" /></RTEToolbarButton>
-                </div>
-            </SectionWrapper>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t('textFormatting')}</h2>
+            <div className="space-y-6">
+                <ControlSection title={t('fontStyle')}>
+                    <div className="space-y-2">
+                         <SelectControl value={formats.fontName} onChange={(e) => handleFormat('fontName', e.target.value)} icon={Type}>
+                            {fonts.map(font => <option key={font} value={font} style={{fontFamily: font}}>{font}</option>)}
+                        </SelectControl>
+                        <div className="flex items-center gap-2">
+                            <SelectControl value={formats.fontSize} onChange={(e) => handleFormat('fontSize', e.target.value)}>
+                                {Object.entries(fontSizes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                            </SelectControl>
+                            <input
+                                type="color"
+                                value={formats.foreColor}
+                                onChange={(e) => handleFormat('foreColor', e.target.value)}
+                                onMouseDown={e => e.preventDefault()}
+                                className="w-10 h-10 p-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer"
+                                aria-label="Text color"
+                            />
+                        </div>
+                    </div>
+                </ControlSection>
+
+                <ControlSection title={t('paragraph')}>
+                    <SelectControl value={formats.formatBlock} onChange={(e) => handleFormat('formatBlock', e.target.value)}>
+                        {Object.entries(blockFormats).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                    </SelectControl>
+                    <div className="grid grid-cols-3 gap-1 p-1 bg-gray-100 dark:bg-gray-900/50 rounded-lg">
+                        <ToolbarButton onClick={() => handleFormat('bold')} aria-label="Bold" isActive={formats.bold}><Bold className="w-5 h-5 mx-auto" /></ToolbarButton>
+                        <ToolbarButton onClick={() => handleFormat('italic')} aria-label="Italic" isActive={formats.italic}><Italic className="w-5 h-5 mx-auto" /></ToolbarButton>
+                        <ToolbarButton onClick={() => handleFormat('underline')} aria-label="Underline" isActive={formats.underline}><Underline className="w-5 h-5 mx-auto" /></ToolbarButton>
+                    </div>
+                </ControlSection>
+
+                <ControlSection title={t('alignment')}>
+                    <div className="grid grid-cols-3 gap-1 p-1 bg-gray-100 dark:bg-gray-900/50 rounded-lg">
+                        <ToolbarButton onClick={() => handleFormat('justifyLeft')} aria-label="Align Left" isActive={formats.justifyLeft}><AlignLeft className="w-5 h-5 mx-auto" /></ToolbarButton>
+                        <ToolbarButton onClick={() => handleFormat('justifyCenter')} aria-label="Align Center" isActive={formats.justifyCenter}><AlignCenter className="w-5 h-5 mx-auto" /></ToolbarButton>
+                        <ToolbarButton onClick={() => handleFormat('justifyRight')} aria-label="Align Right" isActive={formats.justifyRight}><AlignRight className="w-5 h-5 mx-auto" /></ToolbarButton>
+                    </div>
+                </ControlSection>
+                
+                 <ControlSection title={t('lists')}>
+                    <div className="grid grid-cols-2 gap-1 p-1 bg-gray-100 dark:bg-gray-900/50 rounded-lg">
+                        <ToolbarButton onClick={() => handleFormat('insertUnorderedList')} aria-label="Bulleted List" isActive={formats.ul}><List className="w-5 h-5 mx-auto" /></ToolbarButton>
+                        <ToolbarButton onClick={() => handleFormat('insertOrderedList')} aria-label="Numbered List" isActive={formats.ol}><ListOrdered className="w-5 h-5 mx-auto" /></ToolbarButton>
+                    </div>
+                </ControlSection>
+            </div>
         </div>
     );
 };

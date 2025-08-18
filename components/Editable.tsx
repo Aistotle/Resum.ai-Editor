@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { SparklesIcon } from './Icons';
 
 type EditableProps = {
+  id?: string;
   value: any; // Can be string or string[]
   path: string;
   className?: string;
@@ -17,6 +18,7 @@ type EditableProps = {
 };
 
 const Editable: React.FC<EditableProps> = ({
+  id,
   value,
   path,
   className,
@@ -91,6 +93,7 @@ const Editable: React.FC<EditableProps> = ({
   };
   
   const componentProps: any = {
+    id: id,
     ref: elementRef,
     className: `${className || ''} ${isEditingByAI ? 'animate-pulse bg-blue-100 dark:bg-blue-900/50 rounded-sm' : ''} ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-text' : ''}`,
     style: style,

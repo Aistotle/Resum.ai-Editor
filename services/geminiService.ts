@@ -192,14 +192,35 @@ const templateConfigSchema = {
 };
 
 
-export const improveResumeWithAI = async (resumeText: string, language: Language): Promise<ResumeData> => {
+export const improveResumeWithAI = async (resumeText: string, language: Language, jobDescription?: string): Promise<ResumeData> => {
     const languageInstruction = language === 'da'
         ? "The entire output, including summary, job descriptions, skills, etc., MUST be in professional, fluent Danish."
         : "The entire output, including summary, job descriptions, skills, etc., MUST be in professional, fluent English.";
 
     try {
+        const tailoringInstruction = jobDescription
+            ? `
+                You are also an expert recruiter. Your primary task is to tailor this resume for the specific job description provided below.
+                
+                **CRITICAL CONSTRAINT: You MUST NOT invent, fabricate, or exaggerate any experience, skills, or qualifications. Your task is to rephrase and highlight the candidate's *existing* experience from the original text to align with the job description.**
+                - If the original resume has no relevant experience for a key requirement in the job description, DO NOT create it. Instead, focus on transferable skills that *are* present in the original text.
+                - For example, if the resume is for a wizard and the job is for a plumber, you should highlight skills like problem-solving and managing complex systems, but you absolutely MUST NOT claim the wizard has experience with pipes or plumbing fixtures. Be honest and grounded in the source text.
+
+                - Analyze the job description for key skills, technologies, and qualifications.
+                - Rewrite the 'summary' and 'experience' bullet points to directly address these requirements using evidence from the original resume.
+                - Emphasize achievements and skills from the original resume that are most relevant to this specific job.
+
+                **Job Description to Target:**
+                ---
+                ${jobDescription}
+                ---
+            `
+            : `
+                Your task is to transform raw resume text into a professional, high-quality data structure.
+            `;
+        
         const prompt = `
-            You are an expert resume writer and editor. Your task is to transform raw resume text into a professional, high-quality data structure.
+            You are an expert resume writer and editor. ${tailoringInstruction}
 
             **PRIMARY GOAL: Create concise and impactful content suitable for a 1-2 page resume.**
             - **LANGUAGE REQUIREMENT: ${languageInstruction}**

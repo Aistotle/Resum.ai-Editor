@@ -1,5 +1,5 @@
 import React from 'react';
-import { Logo, Sun, Moon, Download, RefreshCcw, PanelLeft, PanelRight } from './Icons';
+import { Sun, Moon, Download, RefreshCcw, PanelLeft, PanelRight } from './Icons';
 import { Language } from '../types';
 
 interface HeaderProps {
@@ -51,9 +51,9 @@ const Header: React.FC<HeaderProps> = ({ onReset, isEditorView, theme, onThemeCh
                             <PanelLeft className="w-5 h-5" />
                         </button>
                     )}
-                    <Logo className="w-8 h-8 text-primary"/>
+                    <img src="/owl-icon-png.png" alt="Obedai Logo" className="w-8 h-8" />
                     <h1 className="text-xl sm:text-2xl font-bold text-neutral dark:text-white tracking-tight hidden sm:block">
-                        AI Resume Beautifier
+                        Obedai
                     </h1>
                 </div>
                 

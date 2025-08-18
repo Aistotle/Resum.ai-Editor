@@ -72,6 +72,7 @@ const CoverLetterViewer: React.FC<{
             {/* Body */}
             <div className="prose prose-base max-w-none dark:prose-invert font-serif leading-relaxed">
                  <Editable
+                    id="cover-letter-body-editor"
                     value={data.body || ''}
                     {...editableProps('body')}
                     isHtml={true}

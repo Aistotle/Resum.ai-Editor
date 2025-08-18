@@ -59,6 +59,10 @@ const App: React.FC = () => {
   const [editorView, setEditorView] = useState<EditorView>(EditorView.RESUME);
   const [coverLetter, setCoverLetter] = useState<CoverLetterData | null>(null);
   const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState<boolean>(false);
+  
+  // New state for job description tailoring
+  const [jobDescription, setJobDescription] = useState<string>('');
+  const [isTailoringEnabled, setIsTailoringEnabled] = useState<boolean>(false);
 
 
   const t = useCallback((key: string, replacements?: Record<string, string>): string => {
@@ -108,6 +112,8 @@ const App: React.FC = () => {
     setEditorView(EditorView.RESUME);
     setCoverLetter(null);
     setIsGeneratingCoverLetter(false);
+    setJobDescription('');
+    setIsTailoringEnabled(false);
     // Keep custom templates and language
   };
 
@@ -140,9 +146,29 @@ const App: React.FC = () => {
             }
             
             setLoadingMessage(t('loadingBeautifying'));
-            const improvedData = await improveResumeWithAI(originalText, language);
+            const tailoredJobDescription = isTailoringEnabled ? jobDescription : undefined;
+            const improvedData = await improveResumeWithAI(originalText, language, tailoredJobDescription);
             setImprovedResume(improvedData);
-            setConversation([{ role: 'ai', text: t('chatWelcome') }]);
+            
+            let welcomeMessage = t('chatWelcome');
+            if (isTailoringEnabled && jobDescription) {
+                setLoadingMessage(t('loadingWritingCoverLetter'));
+                const aiGeneratedPart = await generateCoverLetterWithAI(improvedData, jobDescription, language);
+                const finalCoverLetter: CoverLetterData = {
+                    ...aiGeneratedPart,
+                    senderName: improvedData.name,
+                    senderContactInfo: [
+                        improvedData.contact.location || '',
+                        improvedData.contact.phone,
+                        improvedData.contact.email,
+                        improvedData.contact.website,
+                    ].filter(Boolean)
+                };
+                setCoverLetter(finalCoverLetter);
+                welcomeMessage = t('chatWelcomeTailored');
+            }
+            
+            setConversation([{ role: 'ai', text: welcomeMessage }]);
             setAppState(AppState.COMPLETE);
           } catch (e: any) {
             console.error('Error during processing:', e);
@@ -162,7 +188,7 @@ const App: React.FC = () => {
       setError(`${t('errorProcessing')}: ${e.message}. ${t('errorTryDifferentFile')}.`);
       setAppState(AppState.ERROR);
     }
-  }, [pdfFile, language, t]);
+  }, [pdfFile, language, t, isTailoringEnabled, jobDescription]);
 
   const handleChatMessage = useCallback(async (message: string) => {
     if (!improvedResume) return;
@@ -421,7 +447,32 @@ const App: React.FC = () => {
         <Hero t={t} />
         <FileUpload onFileSelect={handleFileSelect} disabled={appState !== AppState.INITIAL} t={t} />
         {appState === AppState.FILE_SELECTED && pdfFile && (
-          <div className="mt-8 text-center">
+          <div className="mt-8 w-full text-center">
+            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg mb-6 text-left">
+              <div className="flex items-center justify-between">
+                <label htmlFor="tailor-toggle" className="font-semibold text-gray-700 dark:text-gray-200 cursor-pointer">
+                  {t('tailorResumeToggle')}
+                </label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="tailor-toggle" checked={isTailoringEnabled} onChange={(e) => setIsTailoringEnabled(e.target.checked)} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-primary/50 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                </label>
+              </div>
+              <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isTailoringEnabled ? 'max-h-96 mt-4' : 'max-h-0'}`}>
+                <label htmlFor="job-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('jobDescriptionLabel')}
+                </label>
+                <textarea
+                  id="job-description"
+                  rows={8}
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                  placeholder={t('jobDescriptionPlaceholder')}
+                  className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:outline-none transition"
+                />
+              </div>
+            </div>
+            
             <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
               {t('readyToTransform')} <span className="font-semibold text-primary">{pdfFile.name}</span>?
             </p>

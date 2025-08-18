@@ -20,10 +20,12 @@ export const translations: Record<Language, any> = {
     fileUploadHint: "Kun PDF (MAKS. 5MB)",
     beautifyButton: "Forskøn Mit CV",
     readyToTransform: "Klar til at omdanne",
+    tailorResumeToggle: "Skræddersy til job (genererer også ansøgning)?",
 
     // Loading
     loadingReading: "Læser dit CV...",
     loadingBeautifying: "Forskønner med AI-magi...",
+    loadingWritingCoverLetter: "Skriver din ansøgning...",
     loadingMoment: "Dette kan tage et øjeblik...",
 
     // Errors
@@ -51,6 +53,10 @@ export const translations: Record<Language, any> = {
     coverLetterGenerating: "Skriver din skræddersyede ansøgning...",
     coverLetterError: "Kunne ikke generere ansøgning: {message}",
     textFormatting: "Tekstformatering",
+    fontStyle: "Skrifttype",
+    paragraph: "Afsnit",
+    alignment: "Justering",
+    lists: "Lister",
     
     // Selection Tooltip
     tooltipPlaceholder: "Spørg AI... (f.eks. 'gør dette mere professionelt')",
@@ -101,6 +107,7 @@ export const translations: Record<Language, any> = {
     chatSubtitle: "Fortæl mig, hvad jeg skal ændre.",
     chatPlaceholder: "f.eks., Gør mit resumé kortere",
     chatWelcome: "Her er det første udkast til dit nye CV. Du kan bruge kontrolpanelet til at redigere det med AI, ændre designet eller skifte skabelon.",
+    chatWelcomeTailored: "Jeg har skræddersyet dit CV og skrevet et udkast til en ansøgning. Du kan skifte mellem dem med knapperne ovenfor. Sig til, hvis du vil have ændringer!",
     chatUpdate: "Jeg har opdateret dit CV. Hvad er det næste?",
     chatUpdateCoverLetter: "Jeg har opdateret din ansøgning. Andre ændringer?",
     chatError: "Beklager, jeg kunne ikke foretage den ændring. Kan du prøve at omformulere?",
@@ -185,10 +192,12 @@ export const translations: Record<Language, any> = {
     fileUploadHint: "PDF only (MAX. 5MB)",
     beautifyButton: "Beautify My Resume",
     readyToTransform: "Ready to transform",
+    tailorResumeToggle: "Tailor for job (also generates cover letter)?",
 
     // Loading
     loadingReading: "Reading your resume...",
     loadingBeautifying: "Beautifying with AI magic...",
+    loadingWritingCoverLetter: "Writing your cover letter...",
     loadingMoment: "This may take a moment...",
 
     // Errors
@@ -215,6 +224,10 @@ export const translations: Record<Language, any> = {
     coverLetterGenerating: "Writing your tailored cover letter...",
     coverLetterError: "Could not generate cover letter: {message}",
     textFormatting: "Text Formatting",
+    fontStyle: "Font Style",
+    paragraph: "Paragraph",
+    alignment: "Alignment",
+    lists: "Lists",
 
     // Selection Tooltip
     tooltipPlaceholder: "Ask AI... (e.g. 'make this more professional')",
@@ -265,6 +278,7 @@ export const translations: Record<Language, any> = {
     chatSubtitle: "Tell me what to change.",
     chatPlaceholder: "e.g., Make my summary shorter",
     chatWelcome: "Here is the first draft of your new resume. You can use the control panel to edit it with AI, change the design, or switch templates.",
+    chatWelcomeTailored: "I've tailored your resume and drafted a cover letter for you. You can switch between them using the buttons above. Let me know if you want any changes!",
     chatUpdate: "I've updated your resume. What's next?",
     chatUpdateCoverLetter: "I've updated your cover letter. Any other changes?",
     chatError: "I'm sorry, I couldn't make that change. Could you try rephrasing?",
