@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TemplateIdentifier, TemplateConfig } from '../types';
 import { LayoutGrid } from './Icons';
 import TemplateUploadModal from './TemplateUploadModal';
-import { ModernPreview, ClassicPreview, BlueHeroPreview, ModernSplitPreview, ProfessionalPreview, DynamicPreview } from './TemplatePreviews';
+import { ModernPreview, ClassicPreview, BlueHeroPreview, ModernSplitPreview, ProfessionalPreview, StructuredPreview, DynamicPreview } from './TemplatePreviews';
 
 interface TemplateSwitcherProps {
     selectedTemplate: TemplateIdentifier | TemplateConfig;
@@ -85,6 +85,12 @@ const TemplateSwitcher: React.FC<TemplateSwitcherProps> = ({ selectedTemplate, o
                         preview={<ProfessionalPreview />}
                         isSelected={getIsSelected(TemplateIdentifier.PROFESSIONAL)}
                         onClick={() => onTemplateChange(TemplateIdentifier.PROFESSIONAL)}
+                    />
+                    <TemplateOption 
+                        label={t('structured')}
+                        preview={<StructuredPreview />}
+                        isSelected={getIsSelected(TemplateIdentifier.STRUCTURED)}
+                        onClick={() => onTemplateChange(TemplateIdentifier.STRUCTURED)}
                     />
                 </div>
                 

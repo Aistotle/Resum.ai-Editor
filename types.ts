@@ -17,6 +17,7 @@ export enum TemplateIdentifier {
   BLUE_HERO = 'BLUE_HERO',
   MODERN_SPLIT = 'MODERN_SPLIT',
   PROFESSIONAL = 'PROFESSIONAL',
+  STRUCTURED = 'STRUCTURED',
   DYNAMIC = 'DYNAMIC', // Represents a dynamically generated template
 }
 

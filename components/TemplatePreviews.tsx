@@ -53,6 +53,20 @@ export const ProfessionalPreview = () => (
     </PreviewContainer>
 );
 
+export const StructuredPreview = () => (
+    <PreviewContainer>
+        <rect x="25" y="10" width="30" height="8" fill="currentColor" opacity="0.2" />
+        <rect x="10" y="22" width="20" height="2" fill="currentColor" opacity="0.3" />
+        <rect x="10" y="28" width="60" height="10" fill="currentColor" opacity="0.1" />
+
+        <rect x="10" y="42" width="20" height="2" fill="currentColor" opacity="0.3" />
+        <rect x="10" y="48" width="60" height="20" fill="currentColor" opacity="0.15" />
+        
+        <rect x="10" y="72" width="20" height="2" fill="currentColor" opacity="0.3" />
+        <rect x="10" y="78" width="60" height="12" fill="currentColor" opacity="0.1" />
+    </PreviewContainer>
+);
+
 export const DynamicPreview = () => (
     <PreviewContainer>
         <path d="M20 20 L60 20 L60 80 L20 80 Z" stroke="currentColor" strokeWidth="2" strokeDasharray="4" fill="none" opacity="0.5"/>

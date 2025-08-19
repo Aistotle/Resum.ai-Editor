@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useMemo } from 'react';
 import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
 import Editable from './Editable';
@@ -119,7 +118,6 @@ const TemplateBlueHero: React.FC<TemplateProps> = (props) => {
     }, [data.experience]);
 
     useEffect(() => {
-        // Overflow if more than 1 experience page. The "other info" is on a dedicated page.
         onOverflowChange(experiencePages.length > 1);
     }, [experiencePages.length, onOverflowChange]);
 
@@ -239,7 +237,7 @@ const TemplateBlueHero: React.FC<TemplateProps> = (props) => {
                                     <h3>{t('sectionLanguages')}</h3>
                                     <div className="kv">
                                         {data.languages.map((lang, i) => (
-                                            <Editable key={i} as="div" value={`${lang.name} - ${lang.level}`} path={`languages[${i}].name`} {...editableProps} />
+                                            <Editable key={i} as="div" value={`${lang.name} — ${lang.level}`} path={`languages[${i}].name`} {...editableProps} />
                                         ))}
                                     </div>
                                 </div>

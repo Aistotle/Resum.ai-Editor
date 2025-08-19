@@ -5,6 +5,7 @@ import TemplateClassic from './TemplateClassic';
 import TemplateBlueHero from './TemplateBlueHero';
 import TemplateModernSplit from './TemplateModernSplit';
 import TemplateProfessional from './TemplateProfessional';
+import TemplateStructured from './TemplateStructured';
 import TemplateDynamic from './TemplateDynamic';
 import ControlPanel from './ControlPanel';
 import PaginationWarning from './PaginationWarning';
@@ -117,6 +118,8 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 return <TemplateModernSplit {...templateProps} />;
             case TemplateIdentifier.PROFESSIONAL:
                 return <TemplateProfessional {...templateProps} />;
+            case TemplateIdentifier.STRUCTURED:
+                return <TemplateStructured {...templateProps} />;
             default:
                 return <p>Unknown template selected.</p>;
         }
