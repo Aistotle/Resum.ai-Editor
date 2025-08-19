@@ -1,8 +1,8 @@
-import React from 'react';
-import { flushSync } from 'react-dom';
-import { createRoot } from 'react-dom/client';
-import PrintableDocument from '../components/PrintableDocument';
-import { EditorView, ResumeData, CoverLetterData, TemplateIdentifier, TemplateConfig, DesignOptions } from '../types';
+
+
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { EditorView, ResumeData, CoverLetterData, TemplateIdentifier, TemplateConfig, DesignOptions, SectionId } from '../types';
 
 interface PrintProps {
     editorView: EditorView;
@@ -11,100 +11,78 @@ interface PrintProps {
     selectedTemplate: TemplateIdentifier | TemplateConfig;
     designOptions: DesignOptions;
     t: (key: string) => string;
+    layout: { sidebar: SectionId[], main: SectionId[] };
 }
 
-export const exportToPdf = (printProps: PrintProps, onComplete: () => void): void => {
-    // 1. Open a new window immediately to retain the user-initiated action context.
-    const printWindow = window.open('', '_blank', 'width=816,height=1056');
-    if (!printWindow) {
-        alert("Could not open print window. Please disable your pop-up blocker for this site.");
-        onComplete();
-        return;
+export const exportToPdf = async (printProps: PrintProps): Promise<void> => {
+    // Find all elements with the 'resume-page' class from the live editor.
+    const pageElements = document.querySelectorAll<HTMLElement>('.resume-page');
+    if (pageElements.length === 0) {
+        throw new Error("Could not find any content to export. Please ensure the resume is visible.");
     }
 
-    const printDoc = printWindow.document;
-    printDoc.write('<!DOCTYPE html><html><head><title>Preparing Document...</title></head><body></body></html>');
-    
-    // 2. Clone all stylesheets from the main document to the new window.
-    document.head.querySelectorAll('style, link[rel="stylesheet"]').forEach(node => {
-        printDoc.head.appendChild(node.cloneNode(true));
+    // Create a temporary, off-screen container to render clones for capturing.
+    // This isolates the capture from any transforms (like zoom) or styles in the live editor.
+    const printContainer = document.createElement('div');
+    printContainer.style.position = 'absolute';
+    printContainer.style.left = '-9999px'; // Move it far off-screen
+    printContainer.style.top = '-9999px';
+    // The container needs a defined width to constrain the cloned pages correctly.
+    printContainer.style.width = '8.27in';
+    document.body.appendChild(printContainer);
+
+    const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'in',
+        format: 'a4'
     });
 
-    // 3. Inject print-specific CSS.
-    const printStyles = printDoc.createElement('style');
-    printStyles.textContent = `
-        @page { size: A4; margin: 0; }
-        body { margin: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        .resume-page {
-            page-break-after: always;
-            margin: 0 auto !important;
-            box-shadow: none !important;
-            border: none !important;
-            overflow: hidden;
+    const a4WidthInches = 8.27;
+    const a4HeightInches = 11.69;
+
+    try {
+        // Process each page element one by one
+        for (let i = 0; i < pageElements.length; i++) {
+            const originalPage = pageElements[i];
+            
+            // 1. Clone the page to render it in our clean, off-screen environment
+            const clonedPage = originalPage.cloneNode(true) as HTMLElement;
+            clonedPage.style.transform = 'none'; // Ensure no scaling is applied
+            printContainer.appendChild(clonedPage);
+
+            // Give the browser a moment to render the cloned content and apply fonts
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // 2. Capture the CLONED page, not the original live one
+            const canvas = await html2canvas(clonedPage, {
+                scale: 3, // Use a higher scale for better resolution.
+                useCORS: true,
+                logging: false,
+            });
+
+            const imageData = canvas.toDataURL('image/jpeg', 0.95); // High quality JPEG
+
+            // Add a new page for all but the first element
+            if (i > 0) {
+                pdf.addPage();
+            }
+
+            // 3. Add the captured image to the PDF
+            pdf.addImage(imageData, 'JPEG', 0, 0, a4WidthInches, a4HeightInches);
+            
+            // 4. Clean up the cloned node to free up memory
+            printContainer.removeChild(clonedPage);
         }
-        .resume-page:last-child { page-break-after: avoid; }
-    `;
-    printDoc.head.appendChild(printStyles);
-    
-    // 4. Set theme for consistency.
-    printDoc.documentElement.lang = document.documentElement.lang;
-    if (document.documentElement.classList.contains('dark')) {
-        printDoc.documentElement.classList.add('dark');
+    } finally {
+        // 5. IMPORTANT: Always remove the temporary container from the DOM
+        document.body.removeChild(printContainer);
     }
 
-    // 5. Render the React component into the new window's body.
-    const mountPoint = printDoc.body;
-    const root = createRoot(mountPoint);
-    flushSync(() => {
-        root.render(React.createElement(PrintableDocument, printProps));
-    });
-    
-    // 6. Set up a robust cleanup mechanism.
-    let printed = false;
-    const cleanup = () => {
-        if (!printed) {
-            printed = true;
-            root.unmount();
-            printWindow.close();
-            onComplete();
-        }
-    };
-    printWindow.onafterprint = cleanup;
-    printWindow.onbeforeunload = cleanup; // Handle if the user closes the window manually.
+    // Generate a filename from the user's name or a default
+    const fileName = printProps.resumeData?.name 
+        ? `${printProps.resumeData.name.replace(/\s+/g, '_')}_${printProps.editorView === 'RESUME' ? 'Resume' : 'Cover_Letter'}.pdf`
+        : 'document.pdf';
 
-    // 7. Wait for all assets (fonts, images) to load before printing.
-    const waitForAssetsAndPrint = async () => {
-        try {
-            await (printDoc as any).fonts.ready;
-            
-            const imagePromises = Array.from(printDoc.images)
-                .filter(img => !img.complete)
-                .map(img => new Promise<void>(resolve => {
-                    img.onload = img.onerror = () => resolve();
-                }));
-
-            await Promise.all(imagePromises);
-
-            // All assets are loaded, now we can finalize the document and print.
-            printDoc.close(); // Finalizes the document stream. Important.
-            
-            setTimeout(() => {
-                printWindow.focus();
-                // Attempt execCommand first, fallback to print()
-                const printedSuccessfully = printWindow.document.execCommand('print', true, undefined);
-                if (!printedSuccessfully) {
-                   printWindow.print();
-                }
-                
-                // If the user cancels the print dialog, `onafterprint` will still fire and call cleanup.
-            }, 300); // A generous delay for the final render pass.
-
-        } catch (err) {
-            console.error("Error preparing document for printing:", err);
-            alert("An error occurred preparing the PDF. Some assets may not have loaded correctly.");
-            cleanup();
-        }
-    };
-    
-    waitForAssetsAndPrint();
+    // Trigger the download
+    pdf.save(fileName);
 };

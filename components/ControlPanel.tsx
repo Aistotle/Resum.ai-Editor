@@ -73,6 +73,7 @@ const ControlPanel: React.FC<ControlPanelProps> = (props) => {
                     />
                 );
             case 'AI Chat':
+            default:
                 return (
                     <Chatbot
                         conversation={props.conversation}
@@ -81,28 +82,27 @@ const ControlPanel: React.FC<ControlPanelProps> = (props) => {
                         t={t}
                     />
                 );
-            default:
-                return null;
         }
     };
     
     return (
-        <div className="relative w-full h-full flex bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="relative w-full h-full flex bg-foreground">
             {/* Vertical Icon Navigation */}
-            <nav className="w-16 h-full bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center gap-4 py-4 border-r border-gray-200 dark:border-gray-700">
+            <nav className="w-16 h-full flex flex-col items-center justify-start gap-2 py-4 border-r border-border">
                 {visiblePanels.map(({ id, icon: Icon, labelKey }) => (
                      <button
                         key={id}
                         onClick={() => setActivePanel(id)}
-                        className={`w-12 h-12 flex items-center justify-center rounded-lg transition-all duration-200 ${
+                        className={`w-12 h-12 flex items-center justify-center rounded-lg transition-colors duration-200 relative ${
                             activePanel === id 
-                                ? 'bg-primary text-white scale-110 shadow-lg' 
-                                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-primary'
+                                ? 'bg-secondary text-primary dark:text-primary' 
+                                : 'text-muted-foreground hover:bg-secondary'
                         }`}
                         aria-label={t(labelKey)}
                         aria-selected={activePanel === id}
                     >
                         <Icon className="w-6 h-6" />
+                         {activePanel === id && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-primary rounded-r-full" />}
                     </button>
                 ))}
             </nav>

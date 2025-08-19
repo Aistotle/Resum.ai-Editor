@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ResumeData, SectionId } from '../../types';
+import { ResumeData } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import { Briefcase, Plus, Trash2, Pencil, Menu } from '../Icons';
 
@@ -9,13 +9,10 @@ interface ExperienceEditorProps {
     onRemoveItem: (path: 'experience', index: number) => void;
     onReorderItem: (path: 'experience', oldIndex: number, newIndex: number) => void;
     t: (key: string) => string;
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
-    isFirst: boolean;
-    isLast: boolean;
 }
 
 const ExperienceEditor: React.FC<ExperienceEditorProps> = (props) => {
-    const { data, onOpenModal, onRemoveItem, onReorderItem, t, onReorderSection, isFirst, isLast } = props;
+    const { data, onOpenModal, onRemoveItem, onReorderItem, t } = props;
     const experience = data.experience || [];
 
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -55,9 +52,6 @@ const ExperienceEditor: React.FC<ExperienceEditorProps> = (props) => {
             id="experience" 
             icon={Briefcase} 
             title={t('sectionExperience')}
-            onReorderSection={onReorderSection}
-            isFirst={isFirst}
-            isLast={isLast}
         >
             <div className="space-y-4">
                 {experience.map((job, index) => (

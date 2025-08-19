@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppState, ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, ModalState, SectionId, EditorView, CoverLetterData } from './types';
 import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI, generateCoverLetterWithAI, editCoverLetterWithAI, NetworkError, APIError, ContentError } from './services/geminiService';
@@ -20,16 +21,17 @@ import SimpleTextModal from './components/editor/modals/SimpleTextModal';
 
 
 const defaultDesignOptions: DesignOptions = {
-  primaryColor: '#3B82F6', // A brighter blue
-  headingFont: 'Montserrat',
-  bodyFont: 'Lato',
+  primaryColor: '#111827', // Dark Gray/Almost Black
+  headingFont: 'Inter',
+  bodyFont: 'Inter',
   profilePictureShape: 'circle',
 };
 
-const initialSectionOrder: SectionId[] = [
-    'basics', 'summary', 'profiles', 'experience', 'education', 
-    'skills', 'projects', 'certifications', 'languages', 'interests'
-];
+const initialLayout = {
+    sidebar: ['profiles', 'skills', 'education', 'languages', 'certifications', 'interests'] as SectionId[],
+    main: ['summary', 'experience', 'projects'] as SectionId[],
+};
+
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.INITIAL);
@@ -54,7 +56,6 @@ const App: React.FC = () => {
   const [isControlPanelOpen, setIsControlPanelOpen] = useState(true);
   const [isLiveEditingEnabled, setIsLiveEditingEnabled] = useState<boolean>(true);
   const [modalState, setModalState] = useState<ModalState | null>(null);
-  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(initialSectionOrder);
   
   // New state for cover letter feature
   const [editorView, setEditorView] = useState<EditorView>(EditorView.RESUME);
@@ -64,6 +65,9 @@ const App: React.FC = () => {
   // New state for job description tailoring
   const [jobDescription, setJobDescription] = useState<string>('');
   const [isTailoringEnabled, setIsTailoringEnabled] = useState<boolean>(false);
+  
+  // New state for draggable canvas layout
+  const [layout, setLayout] = useState<{ sidebar: SectionId[], main: SectionId[] }>(initialLayout);
 
 
   const t = useCallback((key: string, replacements?: Record<string, string>): string => {
@@ -109,7 +113,7 @@ const App: React.FC = () => {
     setEditingPath(null);
     setZoomLevel(100);
     setIsLiveEditingEnabled(true);
-    setSectionOrder(initialSectionOrder);
+    setLayout(initialLayout);
     setEditorView(EditorView.RESUME);
     setCoverLetter(null);
     setIsGeneratingCoverLetter(false);
@@ -316,20 +320,45 @@ const App: React.FC = () => {
     });
   }, []);
   
-  const handleReorderSection = useCallback((sectionId: SectionId, direction: 'up' | 'down') => {
-      setSectionOrder(prevOrder => {
-          const index = prevOrder.indexOf(sectionId);
-          if (index === -1) return prevOrder;
+  const handleLayoutChange = useCallback((draggedId: SectionId, targetId: SectionId | null, targetColumn: 'sidebar' | 'main') => {
+    setLayout(prevLayout => {
+        if (!prevLayout) return prevLayout;
 
-          const newIndex = direction === 'up' ? index - 1 : index + 1;
-          if (newIndex < 0 || newIndex >= prevOrder.length) return prevOrder;
+        const newLayout = { main: [...prevLayout.main], sidebar: [...prevLayout.sidebar] };
+        
+        // Find and remove the dragged item from its original column
+        let draggedItem: SectionId | undefined;
+        let mainIndex = newLayout.main.indexOf(draggedId);
+        if (mainIndex > -1) {
+            [draggedItem] = newLayout.main.splice(mainIndex, 1);
+        } else {
+            let sidebarIndex = newLayout.sidebar.indexOf(draggedId);
+            if (sidebarIndex > -1) {
+                [draggedItem] = newLayout.sidebar.splice(sidebarIndex, 1);
+            }
+        }
+        
+        if (!draggedItem) return prevLayout; // Item not found, should not happen
 
-          const newOrder = [...prevOrder];
-          const [movedItem] = newOrder.splice(index, 1);
-          newOrder.splice(newIndex, 0, movedItem);
-          return newOrder;
-      });
+        // Add the item to the target column at the correct position
+        if (targetId) {
+            const targetIndex = newLayout[targetColumn].indexOf(targetId);
+            if (targetIndex > -1) {
+                // Insert before the target item
+                newLayout[targetColumn].splice(targetIndex, 0, draggedItem);
+            } else {
+                // If target somehow not found, append to be safe
+                newLayout[targetColumn].push(draggedItem);
+            }
+        } else {
+            // If no targetId, it means drop at the end of the column
+            newLayout[targetColumn].push(draggedItem);
+        }
+        
+        return newLayout;
+    });
   }, []);
+
 
   const handleReorderItem = useCallback((path: keyof ResumeData, oldIndex: number, newIndex: number) => {
       setImprovedResume(prev => {
@@ -440,22 +469,28 @@ const App: React.FC = () => {
       }
   };
 
-  const handleDownload = useCallback(() => {
+  const handleDownload = useCallback(async () => {
     if (!improvedResume) return;
 
     setIsDownloading(true);
     
-    exportToPdf({
-      editorView,
-      resumeData: improvedResume,
-      coverLetterData: coverLetter,
-      selectedTemplate,
-      designOptions,
-      t,
-    }, () => {
-      setIsDownloading(false);
-    });
-  }, [improvedResume, editorView, coverLetter, selectedTemplate, designOptions, t]);
+    try {
+        await exportToPdf({
+          editorView,
+          resumeData: improvedResume,
+          coverLetterData: coverLetter,
+          selectedTemplate,
+          designOptions,
+          t,
+          layout,
+        });
+    } catch(error) {
+        console.error("PDF Export Error:", error);
+        alert("Sorry, there was an error creating the PDF. Please try again.");
+    } finally {
+        setIsDownloading(false);
+    }
+  }, [improvedResume, editorView, coverLetter, selectedTemplate, designOptions, t, layout]);
 
   const handleZoomChange = (newZoom: number) => {
     setZoomLevel(newZoom);
@@ -499,19 +534,19 @@ const App: React.FC = () => {
         <Hero t={t} />
         <FileUpload onFileSelect={handleFileSelect} disabled={appState !== AppState.INITIAL} t={t} />
         {appState === AppState.FILE_SELECTED && pdfFile && (
-          <div className="mt-8 w-full text-center">
-            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg mb-6 text-left">
+          <div className="mt-8 w-full max-w-lg text-center">
+            <div className="bg-foreground border border-border p-4 rounded-lg mb-6 text-left shadow-sm">
               <div className="flex items-center justify-between">
-                <label htmlFor="tailor-toggle" className="font-semibold text-gray-700 dark:text-gray-200 cursor-pointer">
+                <label htmlFor="tailor-toggle" className="font-semibold text-secondary-foreground cursor-pointer">
                   {t('tailorResumeToggle')}
                 </label>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" id="tailor-toggle" checked={isTailoringEnabled} onChange={(e) => setIsTailoringEnabled(e.target.checked)} className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-primary/50 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                  <div className="w-11 h-6 bg-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                 </label>
               </div>
-              <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isTailoringEnabled ? 'max-h-96 mt-4' : 'max-h-0'}`}>
-                <label htmlFor="job-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isTailoringEnabled ? 'max-h-96 mt-4' : 'max-h-0'}`}>
+                <label htmlFor="job-description" className="block text-sm font-medium text-muted-foreground mb-1">
                     {t('jobDescriptionLabel')}
                 </label>
                 <textarea
@@ -520,17 +555,17 @@ const App: React.FC = () => {
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
                   placeholder={t('jobDescriptionPlaceholder')}
-                  className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:outline-none transition"
+                  className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-ring focus:outline-none transition"
                 />
               </div>
             </div>
             
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
-              {t('readyToTransform')} <span className="font-semibold text-primary">{pdfFile.name}</span>?
+            <p className="text-md text-muted-foreground mb-4">
+              {t('readyToTransform')} <span className="font-semibold text-secondary-foreground">{pdfFile.name}</span>?
             </p>
             <button
               onClick={processResume}
-              className="bg-primary hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all transform hover:scale-105 hover:shadow-primary/50"
+              className="bg-primary text-primary-foreground font-semibold py-3 px-8 rounded-md shadow-sm transition-transform transform hover:scale-105 hover:bg-primary/90"
             >
               {t('beautifyButton')}
             </button>
@@ -582,8 +617,8 @@ const App: React.FC = () => {
             isLiveEditingEnabled={isLiveEditingEnabled}
             onLiveEditingChange={setIsLiveEditingEnabled}
             onActivePathChange={setEditingPath}
-            sectionOrder={sectionOrder}
-            onReorderSection={handleReorderSection}
+            layout={layout}
+            onLayoutChange={handleLayoutChange}
             
             // New props for cover letter
             editorView={editorView}
@@ -638,7 +673,7 @@ const App: React.FC = () => {
   const isEditorView = appState === AppState.COMPLETE && !!improvedResume;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-background text-secondary-foreground font-sans transition-colors duration-300">
       <Header 
         onReset={resetState} 
         isEditorView={isEditorView} 
@@ -654,7 +689,7 @@ const App: React.FC = () => {
       />
       <main className={`w-full transition-all duration-500 ${isEditorView ? 'pt-16' : 'pt-16 sm:pt-20'}`}>
         { isEditorView ? renderContent() : (
-           <div className="w-full flex items-center justify-center px-4">
+           <div className="w-full h-[calc(100vh-4rem)] flex items-center justify-center px-4">
              {renderContent()}
            </div>
         )}

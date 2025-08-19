@@ -1,5 +1,6 @@
+
 import React, { CSSProperties, useEffect } from 'react';
-import { ResumeData, Experience, TemplateConfig, LayoutType, SectionName, DesignOptions } from '../types';
+import { ResumeData, Experience, TemplateConfig, LayoutType, SectionName, DesignOptions, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe } from './Icons';
 import Editable from './Editable';
 
@@ -20,26 +21,17 @@ const getDynamicJobWeight = (job: Experience, density: TemplateConfig['density']
     }
 };
 
-interface TemplateDynamicProps {
-  data: ResumeData;
-  design: DesignOptions;
-  onOverflowChange: (overflow: boolean) => void;
-  config: TemplateConfig;
-  t: (key: string) => string;
-  editMode: boolean;
-  onUpdate: (path: string, value: any) => void;
-  onFocus: (path: string | null) => void;
-  editingPath: string | null;
-  onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
+interface DynamicTemplateWithConfig extends TemplateProps {
+    config: TemplateConfig;
 }
 
-const TemplateDynamic: React.FC<TemplateDynamicProps> = (props) => {
+const TemplateDynamic: React.FC<DynamicTemplateWithConfig> = (props) => {
     const { data, design, onOverflowChange, config, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
     const { layout, colors, typography, sectionStyles, density } = config;
     const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
 
     // --- Pagination Logic ---
-    const PAGE_MAX_WEIGHT = density === 'compact' ? 650 : (density === 'spacious' ? 480 : 550);
+    const PAGE_MAX_WEIGHT = density === 'compact' ? 620 : (density === 'spacious' ? 460 : 520);
     const experiencePages: Experience[][] = [];
 
     if (data.experience.length > 0) {
@@ -140,11 +132,12 @@ const TemplateDynamic: React.FC<TemplateDynamicProps> = (props) => {
     
     const Page: React.FC<{children: React.ReactNode}> = ({ children }) => (
         <div 
-            className="bg-white shadow-2xl mb-8 mx-auto text-gray-800 resume-page"
+            className="bg-white shadow-2xl mb-8 mx-auto resume-page"
             style={{ 
                 width: '100%', 
-                maxWidth: '8.5in', 
-                minHeight: '11in', 
+                maxWidth: '8.27in', 
+                height: '11.69in', 
+                overflow: 'hidden',
                 boxSizing: 'border-box',
                 padding: layout.padding,
                 backgroundColor: colors.background,

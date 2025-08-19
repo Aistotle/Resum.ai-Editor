@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ResumeData, SectionId } from '../../types';
+import { ResumeData } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import { GraduationCap, Plus, Trash2, Pencil, Menu } from '../Icons';
 
@@ -9,13 +9,10 @@ interface EducationEditorProps {
     onRemoveItem: (path: 'education', index: number) => void;
     onReorderItem: (path: 'education', oldIndex: number, newIndex: number) => void;
     t: (key: string) => string;
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
-    isFirst: boolean;
-    isLast: boolean;
 }
 
 const EducationEditor: React.FC<EducationEditorProps> = (props) => {
-    const { data, onOpenModal, onRemoveItem, onReorderItem, t, onReorderSection, isFirst, isLast } = props;
+    const { data, onOpenModal, onRemoveItem, onReorderItem, t } = props;
     const education = data.education || [];
 
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -55,9 +52,6 @@ const EducationEditor: React.FC<EducationEditorProps> = (props) => {
             id="education" 
             icon={GraduationCap} 
             title={t('sectionEducation')}
-            onReorderSection={onReorderSection}
-            isFirst={isFirst}
-            isLast={isLast}
         >
             <div className="space-y-4">
                 {education.map((edu, index) => (

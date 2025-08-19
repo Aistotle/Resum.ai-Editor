@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ResumeData, SectionId } from '../../types';
+import { ResumeData } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import { Award, Plus, Trash2, Pencil, Menu } from '../Icons';
 
@@ -9,13 +9,10 @@ interface CertificationsEditorProps {
     onRemoveItem: (path: 'certifications', index: number) => void;
     onReorderItem: (path: 'certifications', oldIndex: number, newIndex: number) => void;
     t: (key: string) => string;
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
-    isFirst: boolean;
-    isLast: boolean;
 }
 
 const CertificationsEditor: React.FC<CertificationsEditorProps> = (props) => {
-    const { data, onOpenModal, onRemoveItem, onReorderItem, t, onReorderSection, isFirst, isLast } = props;
+    const { data, onOpenModal, onRemoveItem, onReorderItem, t } = props;
     const certifications = data.certifications || [];
 
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -54,9 +51,6 @@ const CertificationsEditor: React.FC<CertificationsEditorProps> = (props) => {
             id="certifications" 
             icon={Award} 
             title={t('sectionCertifications')}
-            onReorderSection={onReorderSection}
-            isFirst={isFirst}
-            isLast={isLast}
         >
             <div className="space-y-4">
                 {certifications.map((cert, index) => (

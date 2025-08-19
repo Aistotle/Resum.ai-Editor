@@ -24,8 +24,8 @@ const LanguageButton: React.FC<{
 }> = ({ lang, currentLang, onClick, children }) => (
     <button
         onClick={() => onClick(lang)}
-        className={`px-3 py-1 text-sm font-bold rounded-md transition-colors ${
-            currentLang === lang ? 'bg-primary text-white' : 'bg-transparent text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700'
+        className={`px-3 py-1 text-xs font-semibold rounded-sm transition-colors ${
+            currentLang === lang ? 'bg-background dark:bg-background text-primary dark:text-primary-foreground shadow-sm' : 'bg-transparent text-muted-foreground hover:text-primary dark:hover:text-primary'
         }`}
     >
         {children}
@@ -39,20 +39,20 @@ const Header: React.FC<HeaderProps> = ({ onReset, isEditorView, theme, onThemeCh
     };
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/70 dark:bg-gray-900/70 backdrop-blur-lg border-b border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300">
+        <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-foreground backdrop-blur-lg border-b border-border transition-colors duration-300">
             <div className="w-full max-w-full mx-auto h-full flex items-center justify-between px-4 sm:px-6">
                 <div className="flex items-center space-x-3">
                     {isEditorView && onToggleSidebar && (
                          <button
                             onClick={onToggleSidebar}
-                            className="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary dark:hover:text-primary transition-all"
+                            className="w-9 h-9 flex items-center justify-center rounded-md text-muted-foreground hover:bg-secondary transition-colors"
                             aria-label="Toggle navigation"
                         >
                             <PanelLeft className="w-5 h-5" />
                         </button>
                     )}
                     <svg 
-                        className="w-8 h-8 text-primary dark:text-secondary" 
+                        className="w-8 h-8 text-primary dark:text-primary" 
                         viewBox="0 0 100 100" 
                         fill="currentColor" 
                         xmlns="http://www.w3.org/2000/svg"
@@ -60,17 +60,17 @@ const Header: React.FC<HeaderProps> = ({ onReset, isEditorView, theme, onThemeCh
                     >
                         <path d="M50 10C27.9086 10 10 27.9086 10 50C10 72.0914 27.9086 90 50 90C72.0914 90 90 72.0914 90 50C90 27.9086 72.0914 10 50 10ZM50 75C36.1929 75 25 63.8071 25 50C25 36.1929 36.1929 25 50 25C63.8071 25 75 36.1929 75 50C75 63.8071 63.8071 75 50 75Z" />
                     </svg>
-                    <h1 className="text-xl sm:text-2xl font-bold text-neutral dark:text-white tracking-tight hidden sm:block">
+                    <h1 className="text-xl sm:text-2xl font-bold text-primary dark:text-primary tracking-tight hidden sm:block">
                         Obedai
                     </h1>
                 </div>
                 
-                <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex items-center gap-2 sm:gap-2">
                     {isEditorView && (
                          <>
                             <button
                                 onClick={onReset}
-                                className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                                className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary dark:hover:text-primary transition-colors p-2 rounded-md hover:bg-secondary"
                             >
                                 <RefreshCcw className="w-4 h-4" />
                                 <span className="hidden sm:inline">{t('startOver')}</span>
@@ -79,12 +79,12 @@ const Header: React.FC<HeaderProps> = ({ onReset, isEditorView, theme, onThemeCh
                             <button
                                 onClick={onDownload}
                                 disabled={isDownloading}
-                                className="flex items-center justify-center gap-2 text-sm font-semibold bg-primary text-white py-2 px-4 rounded-full shadow-md hover:bg-blue-600 transition-all transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 min-w-[150px]"
+                                className="flex items-center justify-center gap-2 text-sm font-semibold bg-primary text-primary-foreground py-2 px-4 rounded-md shadow-sm hover:bg-primary/90 transition-colors disabled:cursor-not-allowed disabled:opacity-50 min-w-[150px]"
                                 title={t('downloadPDF')}
                             >
                                 {isDownloading ? (
                                     <>
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
                                         <span className="hidden sm:inline">{t('downloading')}</span>
                                     </>
                                 ) : (
@@ -96,13 +96,13 @@ const Header: React.FC<HeaderProps> = ({ onReset, isEditorView, theme, onThemeCh
                             </button>
                          </>
                     )}
-                     <div className="flex items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                     <div className="flex items-center bg-secondary p-1 rounded-md">
                         <LanguageButton lang="da" currentLang={language} onClick={onLanguageChange}>DA</LanguageButton>
                         <LanguageButton lang="en" currentLang={language} onClick={onLanguageChange}>EN</LanguageButton>
                     </div>
                     <button
                         onClick={toggleTheme}
-                        className="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary dark:hover:text-primary transition-all"
+                        className="w-9 h-9 flex items-center justify-center rounded-md text-muted-foreground hover:bg-secondary transition-colors"
                         aria-label="Toggle theme"
                     >
                         {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
@@ -110,7 +110,7 @@ const Header: React.FC<HeaderProps> = ({ onReset, isEditorView, theme, onThemeCh
                      {isEditorView && onToggleControlPanel && (
                          <button
                             onClick={onToggleControlPanel}
-                            className="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary dark:hover:text-primary transition-all"
+                            className="w-9 h-9 flex items-center justify-center rounded-md text-muted-foreground hover:bg-secondary transition-colors"
                             aria-label="Toggle controls"
                         >
                             <PanelRight className="w-5 h-5" />

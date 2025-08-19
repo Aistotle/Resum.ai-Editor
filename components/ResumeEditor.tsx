@@ -48,8 +48,8 @@ interface ResumeEditorProps {
     isLiveEditingEnabled: boolean;
     onLiveEditingChange: (enabled: boolean) => void;
     onActivePathChange: (path: string | null) => void;
-    sectionOrder: SectionId[];
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
+    layout: { sidebar: SectionId[], main: SectionId[] };
+    onLayoutChange: (draggedId: SectionId, targetId: SectionId | null, targetColumn: 'sidebar' | 'main') => void;
     // New props
     editorView: EditorView;
     onEditorViewChange: (view: EditorView) => void;
@@ -96,6 +96,8 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
             onFocus: props.onActivePathChange,
             editingPath: props.editingPath,
             onAITooltipOpen: props.onAITooltipOpen,
+            layout: props.layout,
+            onLayoutChange: props.onLayoutChange,
         };
         
         const currentTemplateId = typeof selectedTemplate === 'string' ? selectedTemplate : selectedTemplate.id;
@@ -121,17 +123,17 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
     };
 
     const ViewSwitcher = () => (
-        <div className="w-full flex justify-center mb-8">
-            <div className="bg-gray-200 dark:bg-gray-700 p-1 rounded-full flex items-center gap-1">
+        <div className="w-full flex justify-center mb-6">
+            <div className="bg-secondary p-1 rounded-lg flex items-center gap-1">
                 <button 
                     onClick={() => onEditorViewChange(EditorView.RESUME)}
-                    className={`px-6 py-2 text-sm font-bold rounded-full transition-colors ${editorView === EditorView.RESUME ? 'bg-white dark:bg-gray-800 text-primary shadow' : 'text-gray-600 dark:text-gray-300'}`}
+                    className={`px-6 py-1.5 text-sm font-semibold rounded-md transition-all ${editorView === EditorView.RESUME ? 'bg-background shadow text-primary dark:text-primary' : 'text-muted-foreground hover:text-secondary-foreground'}`}
                 >
                     {t('resume')}
                 </button>
                  <button 
                     onClick={() => onEditorViewChange(EditorView.COVER_LETTER)}
-                    className={`px-6 py-2 text-sm font-bold rounded-full transition-colors ${editorView === EditorView.COVER_LETTER ? 'bg-white dark:bg-gray-800 text-primary shadow' : 'text-gray-600 dark:text-gray-300'}`}
+                    className={`px-6 py-1.5 text-sm font-semibold rounded-md transition-all ${editorView === EditorView.COVER_LETTER ? 'bg-background shadow text-primary dark:text-primary' : 'text-muted-foreground hover:text-secondary-foreground'}`}
                 >
                     {t('coverLetter')}
                 </button>
@@ -158,18 +160,17 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 isOpen={props.isSidebarOpen}
                 editorView={props.editorView}
                 resumeData={props.resumeData}
+                layout={props.layout}
                 onUpdate={props.onResumeUpdate}
                 onOpenModal={props.onOpenModal}
                 onRemoveItem={props.onRemoveItem}
                 onReorderItem={props.onReorderItem}
                 t={props.t}
-                sectionOrder={props.sectionOrder}
-                onReorderSection={props.onReorderSection}
                 onProfilePictureChange={props.onProfilePictureChange}
             />
 
             {/* Main Content Area */}
-            <div className="relative flex-grow h-full overflow-y-auto px-4 sm:px-6 md:px-8 py-8 sm:py-10 bg-gray-100 dark:bg-gray-800">
+            <div className="relative flex-grow h-full overflow-y-auto px-4 sm:px-6 md:px-8 py-8 sm:py-10 bg-background">
                 <ViewSwitcher />
                 <div 
                     ref={resumeContainerRef}
@@ -180,7 +181,7 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                     }}
                 >
                     {editorView === EditorView.RESUME ? (
-                        <div className="max-w-4xl mx-auto">
+                        <div className={`max-w-4xl mx-auto ${!props.isLiveEditingEnabled ? 'layout-mode' : ''}`}>
                             {showOverflowWarning && <PaginationWarning t={t} />}
                             <div>
                                 {renderPreview()}
@@ -204,8 +205,8 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
             </div>
             
             {/* Control Panel */}
-            <aside ref={controlPanelRef} className={`flex-shrink-0 transition-all duration-300 ease-in-out bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 ${isControlPanelOpen ? 'w-full max-w-md' : 'w-0'}`}>
-                 <div className={`h-full overflow-hidden transition-opacity duration-200 ${isControlPanelOpen ? 'p-4 opacity-100' : 'p-0 opacity-0'}`}>
+            <aside ref={controlPanelRef} className={`flex-shrink-0 transition-all duration-300 ease-in-out bg-foreground border-l border-border ${isControlPanelOpen ? 'w-full max-w-sm' : 'w-0'}`}>
+                 <div className={`h-full overflow-hidden transition-opacity duration-200 ${isControlPanelOpen ? 'opacity-100' : 'p-0 opacity-0'}`}>
                     <ControlPanel 
                         {...props}
                         availablePanels={editorView === EditorView.RESUME ? ['AI Chat', 'Design', 'Templates'] : ['AI Chat']}

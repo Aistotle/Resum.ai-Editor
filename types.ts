@@ -185,3 +185,17 @@ export interface TemplateConfig {
     borderBottom: string; // e.g., '1px solid #e5e7eb' or 'none'
   };
 }
+
+export interface TemplateProps {
+  data: ResumeData;
+  design: DesignOptions;
+  onOverflowChange: (overflow: boolean) => void;
+  t: (key: string) => string;
+  editMode: boolean;
+  onUpdate: (path: string, value: any) => void;
+  onFocus: (path: string | null) => void;
+  editingPath: string | null;
+  onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
+  layout: { sidebar: SectionId[], main: SectionId[] };
+  onLayoutChange: (draggedId: SectionId, targetId: SectionId | null, targetColumn: 'sidebar' | 'main') => void;
+}

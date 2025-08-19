@@ -9,13 +9,13 @@ interface ErrorMessageProps {
 
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, onRetry, t }) => {
   return (
-    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-300 p-6 rounded-2xl shadow-lg w-full max-w-2xl text-center flex flex-col items-center">
-      <AlertTriangle className="w-12 h-12 text-red-400 mb-4"/>
-      <p className="font-bold text-xl mb-2 text-red-800 dark:text-red-200">{t('errorTitle')}</p>
-      <p className="mb-6">{message}</p>
+    <div className="bg-red-500/10 border border-red-500/20 text-red-300 p-6 rounded-lg shadow-sm w-full max-w-2xl text-center flex flex-col items-center">
+      <AlertTriangle className="w-10 h-10 text-red-500 mb-4"/>
+      <p className="font-semibold text-lg mb-2 text-red-200">{t('errorTitle')}</p>
+      <p className="mb-6 text-sm">{message}</p>
       <button
         onClick={onRetry}
-        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full transition-all transform hover:scale-105"
+        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-md transition-colors"
       >
         {t('errorTryAgain')}
       </button>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ResumeData, SectionId } from '../../types';
+import { ResumeData } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import FormInput from './FormInput';
 import { User } from '../Icons';
@@ -8,13 +8,10 @@ interface BasicsEditorProps {
     data: ResumeData;
     onUpdate: (path: string, value: string) => void;
     t: (key: string) => string;
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
-    isFirst: boolean;
-    isLast: boolean;
     onProfilePictureChange: (file: File | null) => void;
 }
 
-const BasicsEditor: React.FC<BasicsEditorProps> = ({ data, onUpdate, t, onReorderSection, isFirst, isLast, onProfilePictureChange }) => {
+const BasicsEditor: React.FC<BasicsEditorProps> = ({ data, onUpdate, t, onProfilePictureChange }) => {
     
     const handlePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -27,9 +24,6 @@ const BasicsEditor: React.FC<BasicsEditorProps> = ({ data, onUpdate, t, onReorde
             id="basics" 
             icon={User} 
             title={t('sectionBasics')}
-            onReorderSection={onReorderSection}
-            isFirst={isFirst}
-            isLast={isLast}
         >
             <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

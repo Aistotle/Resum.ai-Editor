@@ -16,40 +16,40 @@ interface EditorSidebarProps {
     isOpen: boolean;
     editorView: EditorView;
     resumeData: ResumeData;
+    layout: { sidebar: SectionId[], main: SectionId[] };
     onUpdate: (path: string, value: any) => void;
     onOpenModal: (path: keyof ResumeData, index?: number) => void;
     onRemoveItem: (path: keyof ResumeData, index: number) => void;
     onReorderItem: (path: keyof ResumeData, oldIndex: number, newIndex: number) => void;
     t: (key: string) => string;
-    sectionOrder: SectionId[];
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
     onProfilePictureChange: (file: File | null) => void;
 }
 
 const EditorSidebar: React.FC<EditorSidebarProps> = (props) => {
-    const { isOpen, editorView, resumeData, onUpdate, onOpenModal, onRemoveItem, onReorderItem, t, sectionOrder, onReorderSection, onProfilePictureChange } = props;
+    const { isOpen, editorView, resumeData, layout, onUpdate, onOpenModal, onRemoveItem, onReorderItem, t, onProfilePictureChange } = props;
+    const allSections = ['basics', ...layout.sidebar, ...layout.main];
 
     const renderResumeEditors = () => {
         const sectionComponents: Record<SectionId, React.ReactNode> = {
-            basics: <BasicsEditor data={resumeData} onUpdate={onUpdate} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'basics'} isLast={sectionOrder[sectionOrder.length-1] === 'basics'} onProfilePictureChange={onProfilePictureChange} />,
-            summary: <SummaryEditor data={resumeData} onUpdate={onUpdate} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'summary'} isLast={sectionOrder[sectionOrder.length-1] === 'summary'} />,
-            profiles: <ProfilesEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'profiles'} isLast={sectionOrder[sectionOrder.length-1] === 'profiles'} />,
-            experience: <ExperienceEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'experience'} isLast={sectionOrder[sectionOrder.length-1] === 'experience'}/>,
-            education: <EducationEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'education'} isLast={sectionOrder[sectionOrder.length-1] === 'education'}/>,
-            skills: <SkillsEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'skills'} isLast={sectionOrder[sectionOrder.length-1] === 'skills'} />,
-            projects: <ProjectsEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'projects'} isLast={sectionOrder[sectionOrder.length-1] === 'projects'} />,
-            certifications: <CertificationsEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'certifications'} isLast={sectionOrder[sectionOrder.length-1] === 'certifications'} />,
-            languages: <LanguagesEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'languages'} isLast={sectionOrder[sectionOrder.length-1] === 'languages'} />,
-            interests: <GenericListEditor section="interests" data={resumeData.interests} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} onReorderSection={onReorderSection} isFirst={sectionOrder[0] === 'interests'} isLast={sectionOrder[sectionOrder.length-1] === 'interests'} />,
+            basics: <BasicsEditor data={resumeData} onUpdate={onUpdate} t={t} onProfilePictureChange={onProfilePictureChange} />,
+            summary: <SummaryEditor data={resumeData} onUpdate={onUpdate} t={t} />,
+            profiles: <ProfilesEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} />,
+            experience: <ExperienceEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} />,
+            education: <EducationEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} />,
+            skills: <SkillsEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t}  />,
+            projects: <ProjectsEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} />,
+            certifications: <CertificationsEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} />,
+            languages: <LanguagesEditor data={resumeData} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} />,
+            interests: <GenericListEditor section="interests" data={resumeData.interests} onOpenModal={onOpenModal} onRemoveItem={onRemoveItem} onReorderItem={onReorderItem} t={t} />,
         };
         return (
-            <div className="p-6 space-y-8">
-                {sectionOrder.map(sectionId => (
+            <>
+                {allSections.map(sectionId => (
                     <div key={sectionId}>
                         {sectionComponents[sectionId]}
                     </div>
                 ))}
-            </div>
+            </>
         );
     };
 
@@ -58,9 +58,11 @@ const EditorSidebar: React.FC<EditorSidebarProps> = (props) => {
     };
 
     return (
-        <aside className={`flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out ${isOpen ? 'w-full max-w-md' : 'w-0'}`}>
+        <aside className={`flex-shrink-0 bg-foreground border-r border-border transition-all duration-300 ease-in-out ${isOpen ? 'w-full max-w-md' : 'w-0'}`}>
             <div className={`h-full overflow-y-auto transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
-                {editorView === EditorView.RESUME ? renderResumeEditors() : renderCoverLetterEditor()}
+                <div className="p-6 space-y-8">
+                    {editorView === EditorView.RESUME ? renderResumeEditors() : renderCoverLetterEditor()}
+                </div>
             </div>
         </aside>
     );

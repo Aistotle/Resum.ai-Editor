@@ -39,7 +39,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, it
                 <div className="flex justify-end pt-4">
                     <button
                         onClick={handleSave}
-                        className="bg-primary hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+                        className="bg-primary text-primary-foreground font-semibold hover:bg-primary/90 py-2 px-6 rounded-md shadow-sm transition-colors"
                     >
                         {t('saveChanges')}
                     </button>

@@ -1,39 +1,33 @@
 # Guide: Creating New Resume Templates
 
-This guide provides a step-by-step process for creating and integrating new resume templates into the Obedai application. To ensure full compatibility with features like live editing, dynamic styling, and smart pagination, new templates must adhere to the structure and responsibilities outlined below.
+This guide provides a step-by-step process for creating and integrating new resume templates into the Obedai application. To ensure full compatibility with features like live editing, dynamic styling, drag-and-drop layouts, and smart pagination, new templates **must** adhere to the structure and responsibilities outlined below.
 
 ## 1. File Structure
 
 1.  Create a new `.tsx` file for your template in the `src/components/` directory (e.g., `TemplateMinimalist.tsx`).
-2.  The component should be a `React.FC` that accepts `TemplateProps`.
+2.  The component should be a `React.FC` that accepts `TemplateProps`, which should be imported from `../types`.
 
 ```typescript
 // src/components/TemplateMinimalist.tsx
-
 import React from 'react';
-import { ResumeData, DesignOptions, Experience } from '../types';
+import { TemplateProps, Experience } from '../types'; // Import TemplateProps
 import Editable from './Editable';
 
-// Define TemplateProps interface (or import if centralized)
-interface TemplateProps {
-  data: ResumeData;
-  design: DesignOptions;
-  editMode: boolean;
-  onUpdate: (path: string, value: string) => void;
-  onOverflowChange: (overflow: boolean) => void;
-  t: (key: string) => string;
-  editingPath: string | null;
-}
-
-const TemplateMinimalist: React.FC<TemplateProps> = ({
-  data,
-  design,
-  editMode,
-  onUpdate,
-  onOverflowChange,
-  t,
-  editingPath
-}) => {
+const TemplateMinimalist: React.FC<TemplateProps> = (props) => {
+  const { 
+    data, 
+    design, 
+    editMode, 
+    onUpdate, 
+    onOverflowChange, 
+    t, 
+    editingPath, 
+    onFocus, 
+    onAITooltipOpen, 
+    layout, 
+    onLayoutChange 
+  } = props;
+  
   // ... Template logic and JSX ...
 };
 
@@ -52,17 +46,19 @@ Every piece of text that comes from the `ResumeData` object **must** be rendered
 -   **`path`**: A string representing the location of the data in the `ResumeData` object (e.g., `"name"`, `"experience[0].role"`). This is **essential** for updates to work.
 -   **`editMode`**: Pass the `editMode` prop directly.
 -   **`onUpdate`**: Pass the `onUpdate` prop directly.
--   **`editingPath`**: Pass the `editingPath` prop to enable the AI "thinking" animation.
+-   **`onFocus`**: Pass this prop to track which element is currently being edited.
+-   **`editingPath`**: Pass this prop to enable the AI "thinking" animation.
+-   **`onAITooltipOpen`**: Pass this prop to allow the AI tooltip to be triggered for this element.
 
 **Example:**
 ```tsx
+const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
+
 <Editable
   as="h1"
   value={data.name}
   path="name"
-  editMode={editMode}
-  onUpdate={onUpdate}
-  editingPath={editingPath}
+  {...editableProps}
   className="some-tailwind-classes"
 />
 
@@ -70,15 +66,13 @@ Every piece of text that comes from the `ResumeData` object **must** be rendered
 <Editable
   value={desc}
   path={`experience[${globalJobIndex}].description[${i}]`}
-  editMode={editMode}
-  onUpdate={onUpdate}
-  editingPath={editingPath}
+  {...editableProps}
 />
 ```
 
 ### B. Dynamic Styling
 
-Your template should be customizable via the "Design" panel. Use the `design` prop to apply colors and fonts. A common way to do this is with a `<style>` tag or CSS variables.
+Your template should be customizable via the "Design" panel. Use the `design` prop to apply colors and fonts. A common way to do this is with a `<style>` tag and CSS variables.
 
 -   `design.primaryColor`: The main accent color.
 -   `design.headingFont`: The font for major headings (like the person's name).
@@ -112,7 +106,16 @@ return (
 
 To ensure resumes adhere to length constraints, your template must calculate how content fits onto virtual pages and report if it overflows.
 
-1.  **Page Structure**: Wrap each virtual A4 page in a `div` with the class name `resume-page`. This is required for the PDF download feature.
+1.  **Page Structure**: Wrap each virtual A4 page in a `div` with the class name `resume-page`. This is required for the PDF download feature. **Crucially**, this `div` must have a fixed A4 height to prevent content from stretching the page.
+
+    ```css
+    .resume-page {
+        width: 8.27in;
+        height: 11.69in; /* Not min-height! */
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+    ```
 
 2.  **Weight-Based Heuristic**: Implement a function to estimate the "weight" (i.e., the vertical space) of content, especially for variable-length items like job descriptions.
 
@@ -145,12 +148,12 @@ All static text in your template (e.g., section titles like "Skills", "Education
 **Example:**
 ```tsx
 // Correct
-<Section title={t('sectionSkills')}>
+<Section title={t('sectionExperience')}>
   {/* ... */}
 </Section>
 
 // Incorrect
-<Section title="Skills">
+<Section title="Experience">
   {/* ... */}
 </Section>
 ```
@@ -161,21 +164,9 @@ Copy and paste this code into your new template file to get started quickly.
 
 ```tsx
 import React, { useEffect } from 'react';
-import { ResumeData, DesignOptions, Experience } from '../types';
+import { TemplateProps, Experience, DesignOptions } from '../types';
 import Editable from './Editable';
 
-// Define the props your template will receive
-interface TemplateProps {
-  data: ResumeData;
-  design: DesignOptions;
-  editMode: boolean;
-  onUpdate: (path: string, value: string) => void;
-  onOverflowChange: (overflow: boolean) => void;
-  t: (key: string) => string;
-  editingPath: string | null;
-}
-
-// 1. DYNAMIC STYLING: Inject styles based on user's design choices
 const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
   <style>{`
     .my-new-template-class {
@@ -186,59 +177,58 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
   `}</style>
 );
 
-// 2. PAGINATION: Heuristic to measure content length
+const Page: React.FC<{children: React.ReactNode}> = ({ children }) => (
+    <div 
+        className="bg-white shadow-2xl mb-8 mx-auto resume-page"
+        style={{ width: '8.27in', height: '11.69in', overflow: 'hidden' }}
+    >
+        {children}
+    </div>
+);
+
 const getJobWeight = (job: Experience): number => {
     const descriptionLength = job.description.join(' ').length;
     return 20 + (descriptionLength * 0.1) + (job.description.length * 5);
 };
 
-// Main Component
-const YourNewTemplate: React.FC<TemplateProps> = ({ data, design, editMode, onUpdate, onOverflowChange, t, editingPath }) => {
-  // 3. PAGINATION: Calculate page breaks
-  // Tune these max weight values for your specific design
-  const PAGE_1_MAX_WEIGHT = 400;
-  const SUBSEQUENT_PAGE_MAX_WEIGHT = 550;
+const YourNewTemplate: React.FC<TemplateProps> = (props) => {
+  const { data, design, onOverflowChange, t, ...editableProps } = props;
+  
+  // PAGINATION LOGIC GOES HERE...
+  const experiencePages: Experience[][] = [data.experience]; // Simplified for boilerplate
 
-  const experiencePages: Experience[][] = [[]]; // Start with one page
-  // ... Add logic here to loop through `data.experience`, calculate weight, and push to `experiencePages` ...
-
-  // 4. PAGINATION: Report overflow
   useEffect(() => {
     onOverflowChange(experiencePages.length > 2);
   }, [experiencePages.length, onOverflowChange]);
   
-  // Helper to get the original index for the data-path prop
   const getOriginalIndex = (jobToFind: Experience) => data.experience.findIndex(job => job === jobToFind);
 
   return (
-    <div className={`my-new-template-class transition-all duration-300 ${editMode ? 'ring-4 ring-primary/50' : ''}`}>
+    <div className="my-new-template-class transition-all duration-300">
       <StyleInjector design={design} />
 
-      {/* This is a single page. Add logic to map over `experiencePages` to create multiple pages. */}
-      <div className="resume-page bg-white shadow-xl p-14"> {/* PDF generator needs the `resume-page` class */}
-        <header>
-          {/* 5. LIVE EDITING & I18N: Use Editable and t() */}
-          <Editable
-            as="h1"
-            value={data.name}
-            path="name"
-            editMode={editMode}
-            onUpdate={onUpdate}
-            editingPath={editingPath}
-            style={{ fontFamily: 'var(--heading-font)' }}
-          />
-        </header>
-        <main>
-          <h2 style={{ fontFamily: 'var(--heading-font)' }}>{t('sectionExperience')}</h2>
-          {/* Map through a page of experiences and use Editable for everything */}
-        </main>
-      </div>
+      <Page>
+        <div className="p-12">
+            <header>
+            <Editable
+                as="h1"
+                value={data.name}
+                path="name"
+                {...editableProps}
+                style={{ fontFamily: 'var(--heading-font)' }}
+            />
+            </header>
+            <main>
+            <h2 style={{ fontFamily: 'var(--heading-font)' }}>{t('sectionExperience')}</h2>
+            {/* Map through a page of experiences and use Editable for everything */}
+            </main>
+        </div>
+      </Page>
     </div>
   );
 };
 
 export default YourNewTemplate;
-
 ```
 
 ## 4. App Integration Checklist
@@ -252,7 +242,7 @@ After creating your component, follow these steps to make it available to users:
       MINIMALIST = 'MINIMALIST',
     }
     ```
-2.  **`components/Icons.tsx`**: Create a new SVG icon component (e.g., `MinimalistLayoutIcon`) to serve as a preview.
-3.  **`components/TemplateSwitcher.tsx`**: Import your new icon and add a new `<TemplateOption />` to the switcher UI.
-4.  **`components/ResumeEditor.tsx`**: Import your new template component and add a `case` for it in the `renderTemplate` function.
-5.  **`translations.ts`**: Add a new key for your template's name (e.g., `minimalist: "Minimalistisk"`) under both `da` and `en`.
+2.  **`components/TemplatePreviews.tsx`**: Create a new SVG preview component (e.g., `MinimalistPreview`) for your template's layout.
+3.  **`components/TemplateSwitcher.tsx`**: Import your new preview component and add a new `<TemplateOption />` to the switcher UI.
+4.  **`components/ResumeEditor.tsx`**: Import your new template component and add a `case` for it in the `renderPreview` function.
+5.  **`translations.ts`**: Add a new key for your template's name (e.g., `minimalist: "Minimalist"`) under both `da` and `en`.

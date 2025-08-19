@@ -2,37 +2,112 @@
 <html lang="da">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cstyle%3Epath%7Bfill:%233B82F6%7D@media(prefers-color-scheme:dark)%7Bpath%7Bfill:%23DBEAFE%7D%7D%3C/style%3E%3Cpath d='M50,10A40,40,0,1,0,50,90A40,40,0,1,0,50,10ZM50,75A25,25,0,1,1,50,25A25,25,0,1,1,50,75Z'/%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cstyle%3Epath%7Bfill:%23111827%7D@media(prefers-color-scheme:dark)%7Bpath%7Bfill:%23F9FAFB%7D%7D%3C/style%3E%3Cpath d='M50,10A40,40,0,1,0,50,90A40,40,0,1,0,50,10ZM50,75A25,25,0,1,1,50,25A25,25,0,1,1,50,75Z'/%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Obedai</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700;900&family=Open+Sans:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
-        darkMode: 'class', // Enable dark mode
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
-              'primary': '#3B82F6', // Brighter Blue
-              'secondary': '#DBEAFE',
-              'accent': '#10B981',
-              'neutral': '#1F2937',
-              'base-100': '#F9FAFB',
+              border: 'hsl(var(--border))',
+              input: 'hsl(var(--input))',
+              ring: 'hsl(var(--ring))',
+              background: 'hsl(var(--background))',
+              foreground: 'hsl(var(--foreground))',
+              primary: {
+                DEFAULT: 'hsl(var(--primary))',
+                foreground: 'hsl(var(--primary-foreground))',
+              },
+              secondary: {
+                DEFAULT: 'hsl(var(--secondary))',
+                foreground: 'hsl(var(--secondary-foreground))',
+              },
+              muted: {
+                DEFAULT: 'hsl(var(--muted))',
+                foreground: 'hsl(var(--muted-foreground))',
+              },
             },
             fontFamily: {
-              sans: ['Lato', 'sans-serif'],
-              serif: ['Merriweather', 'serif'],
-              lato: ['Lato', 'sans-serif'],
-              montserrat: ['Montserrat', 'sans-serif'],
-              'open-sans': ['Open Sans', 'sans-serif'],
-              roboto: ['Roboto', 'sans-serif'],
+              sans: ['Inter', 'sans-serif'],
+            },
+            keyframes: {
+                'fade-in': {
+                    from: { opacity: '0' },
+                    to: { opacity: '1' },
+                },
+                'slide-up': {
+                    from: { transform: 'translateY(20px)', opacity: '0' },
+                    to: { transform: 'translateY(0)', opacity: '1' },
+                }
+            },
+            animation: {
+                'fade-in': 'fade-in 0.3s ease-out forwards',
+                'slide-up': 'slide-up 0.3s ease-out forwards',
             }
           }
         }
       }
     </script>
+    <style>
+        :root {
+            --background: 240 10% 99%; /* Almost white */
+            --foreground: 0 0% 100%; /* White */
+            --primary: 222.2 84% 4.9%; /* Almost black */
+            --primary-foreground: 210 40% 98%; /* White-ish */
+            --secondary: 240 4.8% 95.9%; /* Light gray */
+            --secondary-foreground: 222.2 47.4% 11.2%; /* Dark gray text */
+            --muted: 240 4.8% 95.9%; /* Same as secondary */
+            --muted-foreground: 240 3.8% 46.1%; /* Medium gray text */
+            --border: 240 5.9% 90%; /* Subtle border */
+            --input: 240 5.9% 90%;
+            --ring: 222.2 84% 4.9%;
+        }
+        .dark {
+            --background: 222.2 84% 4.9%; /* Almost black */
+            --foreground: 222.2 84% 6.9%; /* Slightly lighter black for cards */
+            --primary: 210 40% 98%; /* White-ish */
+            --primary-foreground: 222.2 84% 4.9%; /* Almost black */
+            --secondary: 217.2 32.6% 17.5%; /* Dark gray */
+            --secondary-foreground: 210 40% 98%; /* White-ish text */
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%; /* Lighter gray text */
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 210 40% 98%;
+        }
+        .layout-mode .draggable-section {
+            position: relative;
+            border: 1px dashed transparent;
+            border-radius: 0.5rem;
+            transition: border-color 0.2s ease-in-out;
+            cursor: grab;
+        }
+        .layout-mode .draggable-section:hover {
+            border-color: hsl(var(--primary));
+        }
+        .layout-mode .draggable-section.dragging {
+            opacity: 0.4;
+            border-style: solid;
+        }
+        .drop-indicator {
+            height: 2px;
+            background-color: hsl(var(--primary));
+            border-radius: 1px;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scaleX(1); }
+            50% { opacity: 0.6; transform: scaleX(0.98); }
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";

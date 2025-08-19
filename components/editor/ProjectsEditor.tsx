@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ResumeData, SectionId } from '../../types';
+import { ResumeData } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import { FolderGit2, Plus, Trash2, Pencil, Menu } from '../Icons';
 
@@ -9,13 +9,10 @@ interface ProjectsEditorProps {
     onRemoveItem: (path: 'projects', index: number) => void;
     onReorderItem: (path: 'projects', oldIndex: number, newIndex: number) => void;
     t: (key: string) => string;
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
-    isFirst: boolean;
-    isLast: boolean;
 }
 
 const ProjectsEditor: React.FC<ProjectsEditorProps> = (props) => {
-    const { data, onOpenModal, onRemoveItem, onReorderItem, t, onReorderSection, isFirst, isLast } = props;
+    const { data, onOpenModal, onRemoveItem, onReorderItem, t } = props;
     const projects = data.projects || [];
 
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -54,9 +51,6 @@ const ProjectsEditor: React.FC<ProjectsEditorProps> = (props) => {
             id="projects" 
             icon={FolderGit2} 
             title={t('sectionProjects')}
-            onReorderSection={onReorderSection}
-            isFirst={isFirst}
-            isLast={isLast}
         >
             <div className="space-y-4">
                 {projects.map((project, index) => (

@@ -1,5 +1,7 @@
+
+
 import React, { useEffect } from 'react';
-import { ResumeData, DesignOptions, Experience } from '../types';
+import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe } from './Icons';
 import Editable from './Editable';
 
@@ -15,11 +17,12 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
 
 const Page: React.FC<{children: React.ReactNode}> = ({ children }) => (
     <div 
-        className="bg-white shadow-2xl mb-8 mx-auto p-14 text-gray-800 resume-classic resume-page"
+        className="bg-white shadow-2xl mb-8 mx-auto p-12 text-gray-800 resume-classic resume-page"
         style={{ 
             width: '100%', 
-            maxWidth: '8.5in', 
-            minHeight: '11in', 
+            maxWidth: '8.27in', 
+            height: '11.69in', 
+            overflow: 'hidden',
             boxSizing: 'border-box',
             fontFamily: 'var(--body-font)',
         }}
@@ -48,30 +51,16 @@ const getJobWeight = (job: Experience): number => {
 };
 
 
-interface TemplateClassicProps {
-  data: ResumeData;
-  design: DesignOptions;
-  onOverflowChange: (overflow: boolean) => void;
-  t: (key: string) => string;
-  editMode: boolean;
-  onUpdate: (path: string, value: any) => void;
-  onFocus: (path: string | null) => void;
-  editingPath: string | null;
-  onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
-}
-
-const TemplateClassic: React.FC<TemplateClassicProps> = (props) => {
+const TemplateClassic: React.FC<TemplateProps> = (props) => {
   const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
   // Constants for pagination logic. Tuned for this single-column template.
-  const PAGE_1_MAX_WEIGHT = 400; 
-  const SUBSEQUENT_PAGE_MAX_WEIGHT = 550;
+  const SUBSEQUENT_PAGE_MAX_WEIGHT = 520;
 
   const experiencePages: Experience[][] = [];
   if (data.experience.length > 0) {
       let currentPage: Experience[] = [];
       let currentWeight = 0;
       
-      const pageLimit = PAGE_1_MAX_WEIGHT;
       // This template puts all non-experience content on page 1.
       // So we just need to paginate the experience section across subsequent pages.
       
@@ -138,7 +127,7 @@ const TemplateClassic: React.FC<TemplateClassicProps> = (props) => {
               {data.education.map((edu, index) => (
                 <div key={index} className="mb-4 last:mb-0 text-center">
                   <Editable as="h4" value={edu.degree} path={`education[${index}].degree`} {...editableProps} className="font-bold text-neutral text-lg" />
-                  <Editable value={edu.institution} path={`education[${index}].institution`} {...editableProps} className="text-gray-700 text-md" />
+                  <Editable value={edu.institution} path={`education[${index}].institution`} {...editableProps} className="text-md" />
                   <div className="flex justify-center text-sm text-gray-500 mt-1">
                     <Editable value={edu.period} path={`education[${index}].period`} {...editableProps} />
                     <span className="mx-1">&bull;</span>

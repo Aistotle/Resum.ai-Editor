@@ -1,21 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
-import { ResumeData, DesignOptions, Experience } from '../types';
-import Editable from './Editable';
 
-// =====================
-// Template Props
-// =====================
-interface TemplateProps {
-  data: ResumeData;
-  design: DesignOptions;
-  onOverflowChange: (overflow: boolean) => void;
-  t: (key: string) => string;
-  editMode: boolean;
-  onUpdate: (path: string, value: any) => void;
-  onFocus: (path: string | null) => void;
-  editingPath: string | null;
-  onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
-}
+import React, { useEffect, useMemo } from 'react';
+import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
+import Editable from './Editable';
 
 // =====================
 // Style Injector — color + fonts + page sizing
@@ -35,7 +21,12 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
     .modern-split { font-family: var(--body-font); color: var(--ink); font-size: 10pt; line-height: 1.5; }
     .modern-split h1, .modern-split h2, .modern-split h3 { font-family: var(--heading-font); }
 
-    .resume-page { width: 8.5in; min-height: 11in; box-sizing: border-box; }
+    .resume-page { 
+        width: 8.27in; 
+        height: 11.69in; 
+        box-sizing: border-box; 
+        overflow: hidden; 
+    }
     .pg { display: grid; grid-template-columns: 1fr 32%; gap: 1.25rem; }
 
     .avoid-break { break-inside: avoid; }
@@ -63,8 +54,8 @@ const CHAR_W = 0.09;
 const BULLET_W = 6;
 const HEADER_COST = 120;
 const RIGHT_RAIL_COST = 260;
-const PAGE1_MAX = 560;
-const PAGE_N_MAX = 660;
+const PAGE1_MAX = 500;
+const PAGE_N_MAX = 680;
 
 const jobWeight = (job: Experience) => {
   const textLen = (job.description ?? []).join(' ').length;
@@ -129,7 +120,7 @@ const TemplateModernSplit: React.FC<TemplateProps> = (props) => {
       <StyleInjector design={design} />
 
       {pages.map((page, pageIndex) => (
-        <div key={pageIndex} className="resume-page bg-white no-print-shadow shadow-xl p-10 mb-8">
+        <div key={pageIndex} className="resume-page bg-white no-print-shadow shadow-xl p-8 mb-8">
             {pageIndex === 0 ? (
                  <>
                     <div className="ribbon">{t('labelResume')}</div>
@@ -199,16 +190,12 @@ const TemplateModernSplit: React.FC<TemplateProps> = (props) => {
 
                         <div id="education" data-section-id="education" className="mt-6 scroll-mt-24">
                           <h2 style={{ color: 'var(--ink)', fontWeight: 700 }}>{t('sectionEducation')}</h2>
-                          <div className="mt-3 flex flex-col gap-4">
-                            {(data.education ?? []).map((ed, i) => (
+                          <div className="flex flex-col gap-3 mt-3">
+                            {(data.education ?? []).map((edu, i) => (
                               <div key={i} className="avoid-break">
-                                <Editable as="strong" value={ed.degree ?? ''} path={`education[${i}].degree`} {...editableProps} />
-                                <div className="text-slate-600">
-                                  <Editable value={ed.institution ?? ''} path={`education[${i}].institution`} {...editableProps} />
-                                </div>
-                                <div className="text-slate-500 text-[12px]">
-                                  <Editable value={ed.period ?? ''} path={`education[${i}].period`} {...editableProps} />
-                                </div>
+                                <Editable as="strong" value={edu.degree ?? ''} path={`education[${i}].degree`} {...editableProps} />
+                                <Editable as="div" value={edu.institution ?? ''} path={`education[${i}].institution`} {...editableProps} className="text-slate-600" />
+                                <Editable as="div" value={edu.period ?? ''} path={`education[${i}].period`} {...editableProps} className="text-slate-500 text-[11px] mt-1" />
                               </div>
                             ))}
                           </div>
@@ -217,93 +204,31 @@ const TemplateModernSplit: React.FC<TemplateProps> = (props) => {
                     </div>
                  </>
             ) : (
-                <div className="pg">
-                    <div data-section-id="experience">
-                        <h2 style={{ color: 'var(--ink)', fontWeight: 700 }}>{t('sectionExperience')} — {t('labelContinued')}</h2>
-                        <div className="mt-3 flex flex-col gap-6">
-                            {page.items.map((job) => {
-                                const idx = getOriginalIndex(job);
-                                return (
-                                <article key={idx} className="avoid-break">
-                                {roleLine(idx, job.role, job.company, job.period)}
-                                <ul className="mt-2 list-disc pl-5">
-                                    {(job.description ?? []).map((d, j) => (
-                                    <li key={j} className="mb-1">
-                                        <Editable value={d} path={`experience[${idx}].description[${j}]`} {...editableProps} />
-                                    </li>
-                                    ))}
-                                </ul>
-                                </article>
-                            )})}
-                        </div>
-                        {(data.projects?.length ?? 0) > 0 && (
-                            <div id="projects" data-section-id="projects" className="mt-8 scroll-mt-24">
-                                <h2 style={{ color: 'var(--ink)', fontWeight: 700 }}>{t('sectionProjects')}</h2>
-                                <div className="mt-3 flex flex-col gap-4">
-                                {data.projects!.map((p, i) => (
-                                    <div key={i} className="avoid-break">
-                                    <Editable as="strong" value={p.name ?? ''} path={`projects[${i}].name`} {...editableProps} />
-                                    <div className="text-slate-600">
-                                        <Editable value={p.description ?? ''} path={`projects[${i}].description`} {...editableProps} />
-                                    </div>
-                                    </div>
-                                ))}
-                                </div>
+                <>
+                    <div className="ribbon">{t('labelContinued')}</div>
+                    <div className="pg mt-5">
+                        <div id="experience" data-section-id="experience" className="scroll-mt-24">
+                            <h2 style={{ color: 'var(--ink)', fontWeight: 700, letterSpacing: '.02em' }}>{t('experienceContinued')}</h2>
+                             <div className="mt-3 flex flex-col gap-6">
+                                {page.items.map((job) => {
+                                    const idx = getOriginalIndex(job);
+                                    return(
+                                    <article key={idx} className="avoid-break">
+                                    {roleLine(idx, job.role, job.company, job.period)}
+                                    <ul className="mt-2 list-disc pl-5">
+                                        {(job.description ?? []).map((d, j) => (
+                                        <li key={j} className="mb-1">
+                                            <Editable value={d} path={`experience[${idx}].description[${j}]`} {...editableProps} />
+                                        </li>
+                                        ))}
+                                    </ul>
+                                    </article>
+                                )})}
                             </div>
-                        )}
+                        </div>
+                        <aside />
                     </div>
-                     <aside>
-                        {(data.certifications?.length ?? 0) > 0 && (
-                        <div id="certifications" data-section-id="certifications" className="mt-0 scroll-mt-24">
-                            <h2 style={{ color: 'var(--ink)', fontWeight: 700 }}>{t('sectionCertifications')}</h2>
-                            <div className="mt-3 flex flex-col gap-3">
-                            {data.certifications!.map((c, i) => (
-                                <div key={i} className="avoid-break">
-                                <Editable as="strong" value={c.name ?? ''} path={`certifications[${i}].name`} {...editableProps} />
-                                <div className="text-slate-600">
-                                    <Editable value={c.issuer ?? ''} path={`certifications[${i}].issuer`} {...editableProps} />
-                                </div>
-                                <div className="text-slate-500 text-[12px]">
-                                    <Editable value={c.date ?? ''} path={`certifications[${i}].date`} {...editableProps} />
-                                </div>
-                                </div>
-                            ))}
-                            </div>
-                        </div>
-                        )}
-                        {(data.languages?.length ?? 0) > 0 && (
-                        <div id="languages" data-section-id="languages" className="mt-8 scroll-mt-24">
-                            <h2 style={{ color: 'var(--ink)', fontWeight: 700 }}>{t('sectionLanguages')}</h2>
-                            <div className="mt-3 flex flex-col gap-2">
-                            {data.languages!.map((l, i) => (
-                                <div key={i} className="avoid-break" style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                                <Editable value={l.name ?? ''} path={`languages[${i}].name`} {...editableProps} />
-                                <Editable value={l.level ?? ''} path={`languages[${i}].level`} {...editableProps} className="text-slate-600" />
-                                </div>
-                            ))}
-                            </div>
-                        </div>
-                        )}
-                        {(data.interests?.length ?? 0) > 0 && (
-                        <div id="interests" data-section-id="interests" className="mt-8 scroll-mt-24">
-                            <h2 style={{ color: 'var(--ink)', fontWeight: 700 }}>{t('sectionInterests')}</h2>
-                            <div className="mt-2 flex flex-wrap gap-2 text-[12px] text-slate-700">
-                            {data.interests!.map((it: string, i: number) => (
-                                <div key={i} className="px-2 py-1 rounded-full bg-[color:var(--chip)]">
-                                <Editable value={it} path={`interests[${i}]`} {...editableProps} />
-                                </div>
-                            ))}
-                            </div>
-                        </div>
-                        )}
-                    </aside>
-                </div>
-            )}
-
-            {pageIndex === 0 && (
-                <div className="absolute bottom-10 left-10 text-[11px] text-slate-500">
-                    <Editable value={data.footer ?? ''} path="footer" {...editableProps} />
-                </div>
+                </>
             )}
         </div>
       ))}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ResumeData, SectionId } from '../../types';
+import { ResumeData } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import { Gamepad2, Plus, Trash2, Pencil } from '../Icons';
 
@@ -12,9 +12,6 @@ interface GenericListEditorProps {
     onRemoveItem: (path: SectionKey, index: number) => void;
     onReorderItem: (path: SectionKey, oldIndex: number, newIndex: number) => void;
     t: (key: string) => string;
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
-    isFirst: boolean;
-    isLast: boolean;
 }
 
 const sectionConfig = {
@@ -22,7 +19,7 @@ const sectionConfig = {
 };
 
 const GenericListEditor: React.FC<GenericListEditorProps> = (props) => {
-    const { section, data, onOpenModal, onRemoveItem, onReorderItem, t, onReorderSection, isFirst, isLast } = props;
+    const { section, data, onOpenModal, onRemoveItem, onReorderItem, t } = props;
     const items = data || [];
     const config = sectionConfig[section];
 
@@ -53,9 +50,6 @@ const GenericListEditor: React.FC<GenericListEditorProps> = (props) => {
             id={section} 
             icon={config.icon} 
             title={t(config.titleKey)}
-            onReorderSection={onReorderSection}
-            isFirst={isFirst}
-            isLast={isLast}
         >
             <div className="space-y-4">
                  <div className="flex flex-wrap gap-2">

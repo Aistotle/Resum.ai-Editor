@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ResumeData, SectionId } from '../../types';
+import { ResumeData } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import { Share, Plus, Trash2, Pencil, Menu } from '../Icons';
 
@@ -9,13 +9,10 @@ interface ProfilesEditorProps {
     onRemoveItem: (path: 'profiles', index: number) => void;
     onReorderItem: (path: 'profiles', oldIndex: number, newIndex: number) => void;
     t: (key: string) => string;
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
-    isFirst: boolean;
-    isLast: boolean;
 }
 
 const ProfilesEditor: React.FC<ProfilesEditorProps> = (props) => {
-    const { data, onOpenModal, onRemoveItem, onReorderItem, t, onReorderSection, isFirst, isLast } = props;
+    const { data, onOpenModal, onRemoveItem, onReorderItem, t } = props;
     const profiles = data.profiles || [];
     
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -54,9 +51,6 @@ const ProfilesEditor: React.FC<ProfilesEditorProps> = (props) => {
             id="profiles" 
             icon={Share} 
             title={t('sectionProfiles')}
-            onReorderSection={onReorderSection}
-            isFirst={isFirst}
-            isLast={isLast}
         >
             <div className="space-y-4">
                 {profiles.map((profile, index) => (

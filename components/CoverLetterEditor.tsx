@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { CoverLetterData } from '../types';
 import LoadingIndicator from './LoadingIndicator';
@@ -34,11 +35,11 @@ const CoverLetterViewer: React.FC<{
 
     return (
         <div 
-            className="bg-white dark:bg-gray-800 shadow-2xl mb-8 mx-auto p-16 text-gray-800 dark:text-gray-200 resume-page font-serif text-base"
+            className="bg-white dark:bg-gray-800 shadow-2xl mb-8 mx-auto p-14 text-gray-800 dark:text-gray-200 resume-page font-serif text-base"
             style={{ 
                 width: '100%', 
-                maxWidth: '8.5in', 
-                minHeight: '11in', 
+                maxWidth: '8.27in', 
+                minHeight: '11.69in', 
                 boxSizing: 'border-box',
             }}
         >

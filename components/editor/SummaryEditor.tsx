@@ -1,5 +1,5 @@
 import React from 'react';
-import { ResumeData, SectionId } from '../../types';
+import { ResumeData } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import { FileText, Bold, Italic, Underline, List, ListOrdered } from '../Icons';
 import { cleanupHtml } from '../../utils/getNewItem';
@@ -8,9 +8,6 @@ interface SummaryEditorProps {
     data: ResumeData;
     onUpdate: (path: string, value: string) => void;
     t: (key: string) => string;
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
-    isFirst: boolean;
-    isLast: boolean;
 }
 
 const RTEToolbarButton: React.FC<{ onClick: () => void, children: React.ReactNode, 'aria-label': string }> = ({ onClick, children, 'aria-label': ariaLabel }) => (
@@ -24,7 +21,7 @@ const RTEToolbarButton: React.FC<{ onClick: () => void, children: React.ReactNod
     </button>
 );
 
-const SummaryEditor: React.FC<SummaryEditorProps> = ({ data, onUpdate, t, onReorderSection, isFirst, isLast }) => {
+const SummaryEditor: React.FC<SummaryEditorProps> = ({ data, onUpdate, t }) => {
     
     const handleFormat = (command: string) => {
         document.execCommand(command, false, undefined);
@@ -35,9 +32,6 @@ const SummaryEditor: React.FC<SummaryEditorProps> = ({ data, onUpdate, t, onReor
             id="summary" 
             icon={FileText} 
             title={t('sectionSummary')}
-            onReorderSection={onReorderSection}
-            isFirst={isFirst}
-            isLast={isLast}
         >
             <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
                 <div className="flex flex-wrap items-center gap-1 p-1 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">

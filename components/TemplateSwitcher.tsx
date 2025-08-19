@@ -22,13 +22,13 @@ const TemplateOption: React.FC<{
 }> = ({ label, preview, isSelected, onClick }) => (
      <button 
         onClick={onClick}
-        className={`relative group rounded-xl transition-all duration-200 flex flex-col gap-2 text-center w-full focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-primary`}
+        className={`relative group rounded-xl transition-all duration-200 flex flex-col gap-2 text-center w-full focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-foreground focus:ring-primary`}
         aria-pressed={isSelected}
     >
-        <div className={`w-full aspect-[3/4] overflow-hidden rounded-lg border-2 transition-all duration-200 text-gray-300 dark:text-gray-500 ${isSelected ? 'border-primary shadow-lg' : 'border-gray-200 dark:border-gray-700 group-hover:border-primary/50'}`}>
+        <div className={`w-full aspect-[3/4] overflow-hidden rounded-lg border-2 transition-all duration-200 text-muted-foreground/30 ${isSelected ? 'border-primary dark:border-primary' : 'border-border group-hover:border-border'}`}>
              {preview}
         </div>
-        <span className={`font-semibold text-sm leading-tight transition-colors ${isSelected ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`}>{label}</span>
+        <span className={`font-semibold text-sm leading-tight transition-colors ${isSelected ? 'text-primary dark:text-primary' : 'text-muted-foreground'}`}>{label}</span>
     </button>
 );
 
@@ -49,9 +49,9 @@ const TemplateSwitcher: React.FC<TemplateSwitcherProps> = ({ selectedTemplate, o
 
     return (
         <div className="p-4 h-full flex flex-col">
-            <header className="pb-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-                <h3 className="font-bold text-lg text-neutral dark:text-white">{t('templatesHeader')}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('templatesSubtitle')}</p>
+            <header className="pb-4 border-b border-border flex-shrink-0">
+                <h3 className="font-bold text-lg text-secondary-foreground">{t('templatesHeader')}</h3>
+                <p className="text-sm text-muted-foreground">{t('templatesSubtitle')}</p>
             </header>
             
             <div className="mt-4 flex-grow overflow-y-auto pr-2 -mr-2 space-y-6">
@@ -90,7 +90,7 @@ const TemplateSwitcher: React.FC<TemplateSwitcherProps> = ({ selectedTemplate, o
                 
                 {customTemplates.length > 0 && (
                     <div>
-                        <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 pt-4 mb-4 border-t border-gray-200 dark:border-gray-700">{t('aiTemplates')}</h4>
+                        <h4 className="text-sm font-semibold text-muted-foreground pt-4 mb-4 border-t border-border">{t('aiTemplates')}</h4>
                         <div className="grid grid-cols-2 gap-4">
                              {customTemplates.map(template => (
                                 <TemplateOption 
@@ -106,13 +106,13 @@ const TemplateSwitcher: React.FC<TemplateSwitcherProps> = ({ selectedTemplate, o
                 )}
             </div>
 
-            <div className="pt-4 mt-auto border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-4 mt-auto border-t border-border">
                  <button
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-400 to-blue-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold py-2.5 px-4 rounded-md shadow-sm hover:bg-primary/90 transition-colors"
                  >
                     {t('createWithAI')}
-                    <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-2.5 py-0.5 rounded-full">{t('beta')}</span>
+                    <span className="bg-yellow-400/20 text-yellow-500 text-xs font-bold px-2.5 py-0.5 rounded-full">{t('beta')}</span>
                  </button>
             </div>
             

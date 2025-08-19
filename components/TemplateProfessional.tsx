@@ -1,19 +1,8 @@
+
 import React, { useEffect } from 'react';
-import { ResumeData, DesignOptions, Experience } from '../types';
+import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe, MapPin } from './Icons';
 import Editable from './Editable';
-
-interface TemplateProfessionalProps {
-  data: ResumeData;
-  design: DesignOptions;
-  onOverflowChange: (overflow: boolean) => void;
-  t: (key: string) => string;
-  editMode: boolean;
-  onUpdate: (path: string, value: any) => void;
-  onFocus: (path: string | null) => void;
-  editingPath: string | null;
-  onAITooltipOpen: (path: string, selectedText: string, element: HTMLElement) => void;
-}
 
 const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
   <style>{`
@@ -33,8 +22,9 @@ const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
         className="bg-white shadow-2xl mb-8 mx-auto resume-professional resume-page"
         style={{ 
             width: '100%', 
-            maxWidth: '8.5in', 
-            minHeight: '11in', 
+            maxWidth: '8.27in', 
+            height: '11.69in', 
+            overflow: 'hidden',
             boxSizing: 'border-box',
             fontFamily: 'var(--body-font)',
         }}
@@ -52,9 +42,9 @@ const getJobWeight = (job: Experience): number => {
     return BASE_WEIGHT + (descriptionLength * CHAR_WEIGHT) + (bulletCount * BULLET_WEIGHT);
 };
 
-const TemplateProfessional: React.FC<TemplateProfessionalProps> = (props) => {
+const TemplateProfessional: React.FC<TemplateProps> = (props) => {
   const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
-  const PAGE_1_MAX_WEIGHT = 280;
+  const PAGE_1_MAX_WEIGHT = 260;
   const SUBSEQUENT_PAGE_MAX_WEIGHT = 550;
   
   const experiencePages: Experience[][] = [];
@@ -118,8 +108,8 @@ const TemplateProfessional: React.FC<TemplateProfessionalProps> = (props) => {
     <div className="transition-all duration-300">
       <StyleInjector design={design} />
       <Page>
-        <div className="grid grid-cols-12 min-h-[10in]">
-          <aside className="col-span-4 p-8" style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}>
+        <div className="grid grid-cols-12 min-h-[11.69in]">
+          <aside className="col-span-4 p-6" style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}>
             {data.profilePicture && (
               <div className="mb-8 flex justify-center">
                 <img src={data.profilePicture} alt={data.name} className={`w-32 h-32 object-cover border-4 border-white/20 shadow-lg ${design.profilePictureShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`} />
@@ -160,7 +150,7 @@ const TemplateProfessional: React.FC<TemplateProfessionalProps> = (props) => {
             )}
           </aside>
 
-          <main className="col-span-8 py-10 pr-10 pl-8">
+          <main className="col-span-8 py-8 pr-8 pl-6">
             <header data-section-id="basics" className="mb-10 scroll-mt-24">
               <Editable as="h1" value={data.name} path="name" {...editableProps} className="text-5xl font-extrabold text-gray-900 tracking-tight" style={{fontFamily: 'var(--heading-font)'}} />
               <Editable as="h2" value={data.title} path="title" {...editableProps} className="text-2xl font-light mt-1" style={{color: 'var(--primary-color)'}}/>

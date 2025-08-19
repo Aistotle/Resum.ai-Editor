@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ResumeData, SectionId } from '../../types';
+import { ResumeData } from '../../types';
 import SectionWrapper from './SectionWrapper';
 import { Star, Plus, Trash2, Pencil } from '../Icons';
 
@@ -9,13 +9,10 @@ interface SkillsEditorProps {
     onRemoveItem: (path: 'skills', index: number) => void;
     onReorderItem: (path: 'skills', oldIndex: number, newIndex: number) => void;
     t: (key: string) => string;
-    onReorderSection: (sectionId: SectionId, direction: 'up' | 'down') => void;
-    isFirst: boolean;
-    isLast: boolean;
 }
 
 const SkillsEditor: React.FC<SkillsEditorProps> = (props) => {
-    const { data, onOpenModal, onRemoveItem, onReorderItem, t, onReorderSection, isFirst, isLast } = props;
+    const { data, onOpenModal, onRemoveItem, onReorderItem, t } = props;
     const skills = data.skills || [];
 
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -45,9 +42,6 @@ const SkillsEditor: React.FC<SkillsEditorProps> = (props) => {
             id="skills" 
             icon={Star} 
             title={t('sectionSkills')}
-            onReorderSection={onReorderSection}
-            isFirst={isFirst}
-            isLast={isLast}
         >
             <div className="space-y-4">
                  <div className="flex flex-wrap gap-2">
