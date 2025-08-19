@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useMemo } from 'react';
 import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe, MapPin } from './Icons';
@@ -15,6 +16,8 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
       --sidebar-text: #4b5563; /* gray-600 */
       --main-text: #1f2937; /* gray-800 */
       --main-heading: #111827; /* gray-900 */
+      --font-size: ${design.fontSize}px;
+      --line-height: ${design.lineHeight};
     }
     .dark .resume-structured-v2 {
       --sidebar-bg: #1f2937; /* gray-800 */
@@ -22,6 +25,11 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
       --main-text: #d1d5db; /* gray-300 */
       --main-heading: #f9fafb; /* gray-50 */
     }
+    .resume-structured-v2 {
+        font-size: var(--font-size);
+        line-height: var(--line-height);
+    }
+     ${design.underlineLinks ? `.resume-structured-v2 a { text-decoration: underline; }` : ''}
   `}</style>
 );
 
@@ -151,11 +159,11 @@ const TemplateStructured: React.FC<TemplateProps> = (props) => {
         )}
         <SidebarSection title={t('contact')}>
             <div className="space-y-2 text-sm break-words">
-                {data.contact.location && <div className="flex items-start gap-2"><MapPin className="w-4 h-4 mt-0.5 flex-shrink-0"/><Editable value={data.contact.location} path="contact.location" {...editableProps} /></div>}
-                {data.contact.phone && <div className="flex items-start gap-2"><Phone className="w-4 h-4 mt-0.5 flex-shrink-0"/><Editable value={data.contact.phone} path="contact.phone" {...editableProps} /></div>}
-                {data.contact.email && <div className="flex items-start gap-2"><Mail className="w-4 h-4 mt-0.5 flex-shrink-0"/><Editable value={data.contact.email} path="contact.email" {...editableProps} /></div>}
-                {data.contact.website && <div className="flex items-start gap-2"><Globe className="w-4 h-4 mt-0.5 flex-shrink-0"/><Editable value={data.contact.website} path="contact.website" {...editableProps} /></div>}
-                {data.contact.linkedin && <div className="flex items-start gap-2"><Linkedin className="w-4 h-4 mt-0.5 flex-shrink-0"/><Editable value={data.contact.linkedin} path="contact.linkedin" {...editableProps} /></div>}
+                {data.contact.location && <div className="flex items-start gap-2">{!design.hideIcons && <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0"/>}<Editable value={data.contact.location} path="contact.location" {...editableProps} /></div>}
+                {data.contact.phone && <div className="flex items-start gap-2">{!design.hideIcons && <Phone className="w-4 h-4 mt-0.5 flex-shrink-0"/>}<Editable value={data.contact.phone} path="contact.phone" {...editableProps} /></div>}
+                {data.contact.email && <div className="flex items-start gap-2">{!design.hideIcons && <Mail className="w-4 h-4 mt-0.5 flex-shrink-0"/>}<Editable value={data.contact.email} path="contact.email" {...editableProps} /></div>}
+                {data.contact.website && <div className="flex items-start gap-2">{!design.hideIcons && <Globe className="w-4 h-4 mt-0.5 flex-shrink-0"/>}<Editable value={data.contact.website} path="contact.website" {...editableProps} /></div>}
+                {data.contact.linkedin && <div className="flex items-start gap-2">{!design.hideIcons && <Linkedin className="w-4 h-4 mt-0.5 flex-shrink-0"/>}<Editable value={data.contact.linkedin} path="contact.linkedin" {...editableProps} /></div>}
             </div>
         </SidebarSection>
         {data.skills?.length > 0 && <SidebarSection title={t('sectionSkills')}>
@@ -187,7 +195,7 @@ const TemplateStructured: React.FC<TemplateProps> = (props) => {
       <Page>
         <div className="grid grid-cols-3 h-full">
             <div className="col-span-1 h-full"><Sidebar /></div>
-            <main className="col-span-2 p-8 h-full overflow-hidden" style={{ color: 'var(--main-text)' }}>
+            <main className="col-span-2 p-8 h-full overflow-hidden" style={{ color: 'var(--main-text)', fontFamily: 'var(--body-font)' }}>
                 <header id="basics" data-section-id="basics" className="mb-8 scroll-mt-24">
                     <Editable as="h1" value={data.name} path="name" {...editableProps} className="text-5xl font-extrabold tracking-tight" style={{fontFamily: 'var(--heading-font)', color: 'var(--main-heading)'}} />
                     <Editable as="h2" value={data.title} path="title" {...editableProps} className="text-xl font-light mt-1" style={{color: 'var(--primary-color)'}}/>
@@ -205,7 +213,7 @@ const TemplateStructured: React.FC<TemplateProps> = (props) => {
       {/* --- Subsequent Pages --- */}
       {experiencePages.slice(1).map((chunk, pageIndex) => (
         <Page key={`exp-page-${pageIndex}`}>
-            <div className="p-8 h-full overflow-hidden">
+            <div className="p-8 h-full overflow-hidden" style={{fontFamily: 'var(--body-font)'}}>
                 <MainSection title={`${t('sectionExperience')} (${t('experienceContinued')})`}>
                     {renderExperienceChunk(chunk)}
                 </MainSection>

@@ -1,4 +1,5 @@
 
+
 import React, { CSSProperties, useEffect } from 'react';
 import { ResumeData, Experience, TemplateConfig, LayoutType, SectionName, DesignOptions, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe } from './Icons';
@@ -132,7 +133,7 @@ const TemplateDynamic: React.FC<DynamicTemplateWithConfig> = (props) => {
     
     const Page: React.FC<{children: React.ReactNode}> = ({ children }) => (
         <div 
-            className="bg-white shadow-2xl mb-8 mx-auto resume-page"
+            className="bg-white shadow-2xl mb-8 mx-auto resume-page resume-dynamic-root"
             style={{ 
                 width: '100%', 
                 maxWidth: '8.27in', 
@@ -142,6 +143,9 @@ const TemplateDynamic: React.FC<DynamicTemplateWithConfig> = (props) => {
                 padding: layout.padding,
                 backgroundColor: colors.background,
                 color: colors.text,
+                fontFamily: design.bodyFont,
+                fontSize: `${design.fontSize}px`,
+                lineHeight: design.lineHeight,
             }}
         >
             {children}
@@ -150,18 +154,19 @@ const TemplateDynamic: React.FC<DynamicTemplateWithConfig> = (props) => {
   
   return (
     <div className="transition-all duration-300">
+        <style>{`${design.underlineLinks ? `.resume-dynamic-root a { text-decoration: underline; }` : ''}`}</style>
         <Page>
             <header id="basics" data-section-id="basics" style={{ marginBottom: layout.header.spacing }} className={`flex scroll-mt-24 ${layout.header.alignment === 'center' ? 'flex-col items-center text-center' : `justify-${layout.header.alignment} items-start`}`}>
                 {layout.type === LayoutType.SINGLE_COLUMN && layout.header.alignment === 'center' && <ProfilePicture />}
                  <div>
-                    <Editable as="h1" value={data.name} path="name" {...editableProps} style={{ ...typography.name, color: typography.name.color || colors.heading }} />
-                    <Editable as="h2" value={data.title} path="title" {...editableProps} style={{ ...typography.title, color: typography.title.color || colors.primary }} />
+                    <Editable as="h1" value={data.name} path="name" {...editableProps} style={{ ...typography.name, color: typography.name.color || colors.heading, fontFamily: design.headingFont }} />
+                    <Editable as="h2" value={data.title} path="title" {...editableProps} style={{ ...typography.title, color: typography.title.color || colors.primary, fontFamily: design.headingFont }} />
                  </div>
                  <div className={`flex flex-wrap gap-x-4 gap-y-1 mt-2 ${layout.header.alignment === 'spaceBetween' ? 'text-right' : ''}`} style={{...typography.contact, color: typography.contact.color || colors.text}}>
-                    {data.contact.email && <div className="flex items-center gap-1.5"><Mail className="w-4 h-4"/><Editable value={data.contact.email} path="contact.email" {...editableProps} /></div>}
-                    {data.contact.phone && <div className="flex items-center gap-1.5"><Phone className="w-4 h-4"/><Editable value={data.contact.phone} path="contact.phone" {...editableProps} /></div>}
-                    {data.contact.linkedin && <div className="flex items-center gap-1.5"><Linkedin className="w-4 h-4"/><Editable value={data.contact.linkedin} path="contact.linkedin" {...editableProps} /></div>}
-                    {data.contact.website && <div className="flex items-center gap-1.5"><Globe className="w-4 h-4"/><Editable value={data.contact.website} path="contact.website" {...editableProps} /></div>}
+                    {data.contact.email && <div className="flex items-center gap-1.5">{!design.hideIcons && <Mail className="w-4 h-4"/>}<Editable value={data.contact.email} path="contact.email" {...editableProps} /></div>}
+                    {data.contact.phone && <div className="flex items-center gap-1.5">{!design.hideIcons && <Phone className="w-4 h-4"/>}<Editable value={data.contact.phone} path="contact.phone" {...editableProps} /></div>}
+                    {data.contact.linkedin && <div className="flex items-center gap-1.5">{!design.hideIcons && <Linkedin className="w-4 h-4"/>}<Editable value={data.contact.linkedin} path="contact.linkedin" {...editableProps} /></div>}
+                    {data.contact.website && <div className="flex items-center gap-1.5">{!design.hideIcons && <Globe className="w-4 h-4"/>}<Editable value={data.contact.website} path="contact.website" {...editableProps} /></div>}
                 </div>
             </header>
             

@@ -33,6 +33,10 @@ export interface DesignOptions {
   headingFont: string;
   bodyFont: string;
   profilePictureShape: 'circle' | 'square';
+  fontSize: number;
+  lineHeight: number;
+  hideIcons: boolean;
+  underlineLinks: boolean;
 }
 
 export interface ContactInfo {

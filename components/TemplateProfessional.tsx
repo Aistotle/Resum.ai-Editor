@@ -1,4 +1,5 @@
 
+
 import React, { useEffect } from 'react';
 import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe, MapPin } from './Icons';
@@ -13,7 +14,14 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
       --sidebar-bg: #1f2937;
       --sidebar-text: #d1d5db;
       --sidebar-heading: #ffffff;
+      --font-size: ${design.fontSize}px;
+      --line-height: ${design.lineHeight};
     }
+    .resume-professional {
+        font-size: var(--font-size);
+        line-height: var(--line-height);
+    }
+    ${design.underlineLinks ? `.resume-professional a { text-decoration: underline; }` : ''}
   `}</style>
 );
 
@@ -117,11 +125,11 @@ const TemplateProfessional: React.FC<TemplateProps> = (props) => {
             )}
             <SidebarSection id="basics" title={t('contact')}>
                 <div className="space-y-3 text-sm">
-                    {data.contact.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4"/><Editable value={data.contact.phone} path="contact.phone" {...editableProps} /></div>}
-                    {data.contact.email && <div className="flex items-center gap-2"><Mail className="w-4 h-4"/><Editable value={data.contact.email} path="contact.email" {...editableProps} /></div>}
-                    {data.contact.location && <div className="flex items-center gap-2"><MapPin className="w-4 h-4"/><Editable value={data.contact.location} path="contact.location" {...editableProps} /></div>}
-                    {data.contact.website && <div className="flex items-center gap-2"><Globe className="w-4 h-4"/><Editable value={data.contact.website} path="contact.website" {...editableProps} /></div>}
-                    {data.contact.linkedin && <div className="flex items-center gap-2"><Linkedin className="w-4 h-4"/><Editable value={data.contact.linkedin} path="contact.linkedin" {...editableProps} /></div>}
+                    {!design.hideIcons && data.contact.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4"/><Editable value={data.contact.phone} path="contact.phone" {...editableProps} /></div>}
+                    {!design.hideIcons && data.contact.email && <div className="flex items-center gap-2"><Mail className="w-4 h-4"/><Editable value={data.contact.email} path="contact.email" {...editableProps} /></div>}
+                    {!design.hideIcons && data.contact.location && <div className="flex items-center gap-2"><MapPin className="w-4 h-4"/><Editable value={data.contact.location} path="contact.location" {...editableProps} /></div>}
+                    {!design.hideIcons && data.contact.website && <div className="flex items-center gap-2"><Globe className="w-4 h-4"/><Editable value={data.contact.website} path="contact.website" {...editableProps} /></div>}
+                    {!design.hideIcons && data.contact.linkedin && <div className="flex items-center gap-2"><Linkedin className="w-4 h-4"/><Editable value={data.contact.linkedin} path="contact.linkedin" {...editableProps} /></div>}
                 </div>
             </SidebarSection>
             

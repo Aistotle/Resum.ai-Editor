@@ -13,6 +13,12 @@ interface BasicsEditorProps {
 
 const BasicsEditor: React.FC<BasicsEditorProps> = ({ data, onUpdate, t, onProfilePictureChange }) => {
     
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+    
     const handlePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             onProfilePictureChange(e.target.files[0]);
@@ -37,10 +43,20 @@ const BasicsEditor: React.FC<BasicsEditorProps> = ({ data, onUpdate, t, onProfil
                             </div>
                         </div>
                          <div className="flex-grow space-y-2 mt-2">
-                            <label htmlFor="sidebar-picture-upload" className="w-full text-center cursor-pointer bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <button 
+                                type="button"
+                                onClick={handleUploadClick}
+                                className="w-full text-center cursor-pointer bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
+                            >
                                 {t('uploadImage')}
-                            </label>
-                             <input id="sidebar-picture-upload" type="file" className="hidden" accept="image/png, image/jpeg" onChange={handlePictureUpload} />
+                            </button>
+                             <input 
+                                ref={fileInputRef} 
+                                type="file" 
+                                className="hidden" 
+                                accept="image/png, image/jpeg" 
+                                onChange={handlePictureUpload} 
+                             />
 
                             <button onClick={() => onProfilePictureChange(null)} className="w-full text-center bg-transparent border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
                                {t('removeImage')}

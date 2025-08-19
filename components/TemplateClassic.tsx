@@ -11,7 +11,14 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
       --primary-color: ${design.primaryColor};
       --heading-font: '${design.headingFont}', serif;
       --body-font: '${design.bodyFont}', sans-serif;
+      --font-size: ${design.fontSize}px;
+      --line-height: ${design.lineHeight};
     }
+    .resume-classic {
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+    }
+    ${design.underlineLinks ? `.resume-classic a { text-decoration: underline; }` : ''}
   `}</style>
 );
 
@@ -103,10 +110,10 @@ const TemplateClassic: React.FC<TemplateProps> = (props) => {
             <Editable as="h2" value={data.title} path="title" {...editableProps} className="text-2xl text-gray-600 font-light mt-2 mb-4" />
             
             <div className="flex justify-center items-center flex-wrap gap-x-4 gap-y-1 text-sm" style={{color: 'var(--primary-color)'}}>
-                {data.contact.email && <div className="hover:underline flex items-center gap-1.5"><Mail className="w-4 h-4"/><Editable value={data.contact.email} path="contact.email" {...editableProps} /></div>}
-                {data.contact.phone && <div className="flex items-center gap-1.5"><Phone className="w-4 h-4"/><Editable value={data.contact.phone} path="contact.phone" {...editableProps} /></div>}
-                {data.contact.linkedin && <div className="hover:underline flex items-center gap-1.5"><Linkedin className="w-4 h-4"/><Editable value={data.contact.linkedin} path="contact.linkedin" {...editableProps} /></div>}
-                {data.contact.website && <div className="hover:underline flex items-center gap-1.5"><Globe className="w-4 h-4"/><Editable value={data.contact.website} path="contact.website" {...editableProps} /></div>}
+                {data.contact.email && <div className="hover:underline flex items-center gap-1.5">{!design.hideIcons && <Mail className="w-4 h-4"/>}<Editable value={data.contact.email} path="contact.email" {...editableProps} /></div>}
+                {data.contact.phone && <div className="flex items-center gap-1.5">{!design.hideIcons && <Phone className="w-4 h-4"/>}<Editable value={data.contact.phone} path="contact.phone" {...editableProps} /></div>}
+                {data.contact.linkedin && <div className="hover:underline flex items-center gap-1.5">{!design.hideIcons && <Linkedin className="w-4 h-4"/>}<Editable value={data.contact.linkedin} path="contact.linkedin" {...editableProps} /></div>}
+                {data.contact.website && <div className="hover:underline flex items-center gap-1.5">{!design.hideIcons && <Globe className="w-4 h-4"/>}<Editable value={data.contact.website} path="contact.website" {...editableProps} /></div>}
             </div>
         </header>
 

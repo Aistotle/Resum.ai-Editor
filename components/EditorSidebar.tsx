@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ResumeData, SectionId, EditorView } from '../types';
 import BasicsEditor from './editor/BasicsEditor';
@@ -16,7 +17,6 @@ interface EditorSidebarProps {
     isOpen: boolean;
     editorView: EditorView;
     resumeData: ResumeData;
-    layout: { sidebar: SectionId[], main: SectionId[] };
     onUpdate: (path: string, value: any) => void;
     onOpenModal: (path: keyof ResumeData, index?: number) => void;
     onRemoveItem: (path: keyof ResumeData, index: number) => void;
@@ -25,9 +25,21 @@ interface EditorSidebarProps {
     onProfilePictureChange: (file: File | null) => void;
 }
 
+const EDITOR_SECTION_ORDER: SectionId[] = [
+    'basics',
+    'profiles',
+    'summary',
+    'experience',
+    'education',
+    'skills',
+    'languages',
+    'certifications',
+    'interests',
+    'projects',
+];
+
 const EditorSidebar: React.FC<EditorSidebarProps> = (props) => {
-    const { isOpen, editorView, resumeData, layout, onUpdate, onOpenModal, onRemoveItem, onReorderItem, t, onProfilePictureChange } = props;
-    const allSections = ['basics', ...layout.sidebar, ...layout.main];
+    const { isOpen, editorView, resumeData, onUpdate, onOpenModal, onRemoveItem, onReorderItem, t, onProfilePictureChange } = props;
 
     const renderResumeEditors = () => {
         const sectionComponents: Record<SectionId, React.ReactNode> = {
@@ -44,7 +56,7 @@ const EditorSidebar: React.FC<EditorSidebarProps> = (props) => {
         };
         return (
             <>
-                {allSections.map(sectionId => (
+                {EDITOR_SECTION_ORDER.map(sectionId => (
                     <div key={sectionId}>
                         {sectionComponents[sectionId]}
                     </div>

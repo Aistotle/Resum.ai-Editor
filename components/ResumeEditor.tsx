@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import { ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, SectionId, EditorView, CoverLetterData } from '../types';
 import ResumeTemplate from './ResumeTemplate';
@@ -163,7 +164,6 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 isOpen={props.isSidebarOpen}
                 editorView={props.editorView}
                 resumeData={props.resumeData}
-                layout={props.layout}
                 onUpdate={props.onResumeUpdate}
                 onOpenModal={props.onOpenModal}
                 onRemoveItem={props.onRemoveItem}

@@ -22,9 +22,13 @@ import SimpleTextModal from './components/editor/modals/SimpleTextModal';
 
 const defaultDesignOptions: DesignOptions = {
   primaryColor: '#111827', // Dark Gray/Almost Black
-  headingFont: 'Inter',
-  bodyFont: 'Inter',
+  headingFont: '"IBM Plex Serif", serif',
+  bodyFont: '"IBM Plex Serif", serif',
   profilePictureShape: 'circle',
+  fontSize: 14,
+  lineHeight: 1.5,
+  hideIcons: false,
+  underlineLinks: true,
 };
 
 const initialLayout = {
@@ -434,7 +438,7 @@ const App: React.FC = () => {
     }
   }, [improvedResume, selectionTooltip, language, t, handleResumeUpdate, editorView, coverLetter, handleCoverLetterUpdate]);
 
-  const handleDesignChange = (option: keyof DesignOptions, value: string) => {
+  const handleDesignChange = (option: keyof DesignOptions, value: any) => {
     setDesignOptions(prev => ({ ...prev, [option]: value }));
   };
 

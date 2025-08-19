@@ -9,9 +9,16 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
   <style>{`
     .resume-modern {
       --primary-color: ${design.primaryColor};
-      --heading-font: '${design.headingFont}', sans-serif;
-      --body-font: '${design.bodyFont}', sans-serif;
+      --heading-font: ${design.headingFont}, sans-serif;
+      --body-font: ${design.bodyFont}, sans-serif;
+      --font-size: ${design.fontSize}px;
+      --line-height: ${design.lineHeight};
     }
+    .resume-modern {
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+    }
+     ${design.underlineLinks ? `.resume-modern a { text-decoration: underline; }` : ''}
   `}</style>
 );
 
@@ -193,7 +200,10 @@ const ResumeTemplate: React.FC<TemplateProps> = (props) => {
                     </div>
                     <div className="flex justify-between items-baseline mb-2">
                         <Editable value={job.company} path={`experience[${globalJobIndex}].company`} {...editableProps} className="text-md font-semibold" style={{color: 'var(--primary-color)'}} />
-                        <div className="text-sm text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3"/><Editable value={job.location} path={`experience[${globalJobIndex}].location`} {...editableProps} /></div>
+                        <div className="text-sm text-gray-500 flex items-center gap-1">
+                            {!design.hideIcons && <MapPin className="w-3 h-3"/>}
+                            <Editable value={job.location} path={`experience[${globalJobIndex}].location`} {...editableProps} />
+                        </div>
                     </div>
                     <Editable value={job.period} path={`experience[${globalJobIndex}].period`} {...editableProps} className="text-xs font-medium text-gray-600 mb-2" />
                     <ul className="list-disc list-inside text-gray-700 space-y-1.5 pl-2 leading-normal">
@@ -243,10 +253,10 @@ const ResumeTemplate: React.FC<TemplateProps> = (props) => {
             <Editable as="h2" value={data.title} path="title" {...editableProps} className="text-2xl font-light mt-1" style={{color: 'var(--primary-color)'}}/>
           </div>
           <div className="text-right text-sm space-y-1 text-gray-600">
-            {data.contact.email && <div className="flex items-center justify-end gap-2 hover:text-primary"><Editable value={data.contact.email} path="contact.email" {...editableProps} /><Mail className="w-4 h-4" /></div>}
-            {data.contact.phone && <div className="flex items-center justify-end gap-2"><Editable value={data.contact.phone} path="contact.phone" {...editableProps} /><Phone className="w-4 h-4" /></div>}
-            {data.contact.linkedin && <div className="flex items-center justify-end gap-2 hover:text-primary"><Editable value={data.contact.linkedin} path="contact.linkedin" {...editableProps} /><Linkedin className="w-4 h-4" /></div>}
-            {data.contact.website && <div className="flex items-center justify-end gap-2 hover:text-primary"><Editable value={data.contact.website} path="contact.website" {...editableProps} /><Globe className="w-4 h-4" /></div>}
+            {data.contact.email && <div className="flex items-center justify-end gap-2 hover:text-primary"><Editable value={data.contact.email} path="contact.email" {...editableProps} />{!design.hideIcons && <Mail className="w-4 h-4" />}</div>}
+            {data.contact.phone && <div className="flex items-center justify-end gap-2"><Editable value={data.contact.phone} path="contact.phone" {...editableProps} />{!design.hideIcons && <Phone className="w-4 h-4" />}</div>}
+            {data.contact.linkedin && <div className="flex items-center justify-end gap-2 hover:text-primary"><Editable value={data.contact.linkedin} path="contact.linkedin" {...editableProps} />{!design.hideIcons && <Linkedin className="w-4 h-4" />}</div>}
+            {data.contact.website && <div className="flex items-center justify-end gap-2 hover:text-primary"><Editable value={data.contact.website} path="contact.website" {...editableProps} />{!design.hideIcons && <Globe className="w-4 h-4" />}</div>}
           </div>
         </header>
 
@@ -305,7 +315,10 @@ const ResumeTemplate: React.FC<TemplateProps> = (props) => {
                         </div>
                         <div className="flex justify-between items-baseline mb-2">
                         <Editable value={job.company} path={`experience[${globalJobIndex}].company`} {...editableProps} className="text-md font-semibold" style={{color: 'var(--primary-color)'}} />
-                        <div className="text-sm text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3"/><Editable value={job.location} path={`experience[${globalJobIndex}].location`} {...editableProps} /></div>
+                        <div className="text-sm text-gray-500 flex items-center gap-1">
+                           {!design.hideIcons && <MapPin className="w-3 h-3"/>}
+                           <Editable value={job.location} path={`experience[${globalJobIndex}].location`} {...editableProps} />
+                        </div>
                         </div>
                         <ul className="list-disc list-inside text-gray-700 space-y-1.5 pl-2 leading-normal">
                         {job.description.map((desc, i) => <li key={i}><Editable value={desc} path={`experience[${globalJobIndex}].description[${i}]`} {...editableProps} /></li>)}
