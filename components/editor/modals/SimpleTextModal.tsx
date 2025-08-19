@@ -31,7 +31,7 @@ const SimpleTextModal: React.FC<SimpleTextModalProps> = ({ isOpen, onClose, onSa
                 <div className="flex justify-end pt-4">
                     <button
                         onClick={handleSave}
-                        className="bg-primary text-primary-foreground font-semibold hover:bg-primary/90 py-2 px-6 rounded-md shadow-sm transition-colors"
+                        className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold py-2 px-6 rounded-md shadow-md transition-transform transform hover:scale-105 hover:shadow-lg"
                     >
                         {t('saveChanges')}
                     </button>

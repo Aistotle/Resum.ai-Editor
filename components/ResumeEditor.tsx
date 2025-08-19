@@ -130,13 +130,13 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
             <div className="bg-secondary p-1 rounded-lg flex items-center gap-1">
                 <button 
                     onClick={() => onEditorViewChange(EditorView.RESUME)}
-                    className={`px-6 py-1.5 text-sm font-semibold rounded-md transition-all ${editorView === EditorView.RESUME ? 'bg-background shadow text-primary dark:text-primary' : 'text-muted-foreground hover:text-secondary-foreground'}`}
+                    className={`px-6 py-1.5 text-sm font-semibold rounded-md transition-all ${editorView === EditorView.RESUME ? 'bg-background shadow-md text-primary dark:text-primary' : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'}`}
                 >
                     {t('resume')}
                 </button>
                  <button 
                     onClick={() => onEditorViewChange(EditorView.COVER_LETTER)}
-                    className={`px-6 py-1.5 text-sm font-semibold rounded-md transition-all ${editorView === EditorView.COVER_LETTER ? 'bg-background shadow text-primary dark:text-primary' : 'text-muted-foreground hover:text-secondary-foreground'}`}
+                    className={`px-6 py-1.5 text-sm font-semibold rounded-md transition-all ${editorView === EditorView.COVER_LETTER ? 'bg-background shadow-md text-primary dark:text-primary' : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'}`}
                 >
                     {t('coverLetter')}
                 </button>

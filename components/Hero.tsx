@@ -10,7 +10,9 @@ const Hero: React.FC<HeroProps> = ({ t }) => {
             <h2 className="text-4xl sm:text-5xl font-bold text-primary dark:text-primary tracking-tighter leading-tight">
                 {t('heroTitle1')}
                 <br />
-                {t('heroTitle2')}
+                <span className="animated-text-gradient">
+                    {t('heroTitle2')}
+                </span>
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
                 {t('heroSubtitle')}

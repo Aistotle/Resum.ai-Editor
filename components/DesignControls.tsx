@@ -1,5 +1,6 @@
 import React from 'react';
 import { DesignOptions, ResumeData } from '../types';
+import SelectControl from './editor/SelectControl';
 
 interface DesignControlsProps {
     resumeData: ResumeData;
@@ -55,12 +56,12 @@ const DesignControls: React.FC<DesignControlsProps> = ({ resumeData, designOptio
                            {resumeData.profilePicture && <img src={resumeData.profilePicture} alt="Profile preview" className="w-full h-full object-cover" />}
                         </div>
                         <div className="flex-grow space-y-2">
-                            <label htmlFor="picture-upload" className="w-full text-center cursor-pointer bg-foreground border border-border rounded-md px-3 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary">
+                            <label htmlFor="picture-upload" className="w-full text-center cursor-pointer bg-background border border-border rounded-md px-3 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary">
                                 {t('uploadImage')}
                             </label>
                              <input id="picture-upload" type="file" className="hidden" accept="image/png, image/jpeg" onChange={handlePictureUpload} />
 
-                            <button onClick={() => onProfilePictureChange(null)} className="w-full text-center bg-transparent border border-border rounded-md px-3 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary">
+                            <button onClick={() => onProfilePictureChange(null)} className="w-full text-center bg-background border border-border rounded-md px-3 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary">
                                {t('removeImage')}
                             </button>
                         </div>
@@ -90,28 +91,23 @@ const DesignControls: React.FC<DesignControlsProps> = ({ resumeData, designOptio
                 </ControlSection>
                 <ControlSection title={t('typography')}>
                     <div className="space-y-3">
-                        <div>
-                            <label htmlFor="heading-font" className="block text-sm font-medium text-muted-foreground mb-1">{t('headingFont')}</label>
-                            <select
-                                id="heading-font"
-                                value={designOptions.headingFont}
-                                onChange={(e) => onDesignChange('headingFont', e.target.value)}
-                                className="w-full p-2 bg-foreground border border-border rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
-                            >
-                                <FontOption font="Inter" />
-                            </select>
-                        </div>
-                        <div>
-                            <label htmlFor="body-font" className="block text-sm font-medium text-muted-foreground mb-1">{t('bodyFont')}</label>
-                            <select
-                                id="body-font"
-                                value={designOptions.bodyFont}
-                                onChange={(e) => onDesignChange('bodyFont', e.target.value)}
-                                className="w-full p-2 bg-foreground border border-border rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
-                            >
-                                <FontOption font="Inter" />
-                            </select>
-                        </div>
+                        <SelectControl
+                            id="heading-font"
+                            label={t('headingFont')}
+                            value={designOptions.headingFont}
+                            onChange={(e) => onDesignChange('headingFont', e.target.value)}
+                        >
+                            <FontOption font="Inter" />
+                        </SelectControl>
+                        
+                        <SelectControl
+                            id="body-font"
+                            label={t('bodyFont')}
+                            value={designOptions.bodyFont}
+                            onChange={(e) => onDesignChange('bodyFont', e.target.value)}
+                        >
+                            <FontOption font="Inter" />
+                        </SelectControl>
                     </div>
                 </ControlSection>
             </div>

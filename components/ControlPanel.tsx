@@ -102,7 +102,7 @@ const ControlPanel: React.FC<ControlPanelProps> = (props) => {
                         aria-selected={activePanel === id}
                     >
                         <Icon className="w-6 h-6" />
-                         {activePanel === id && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-primary rounded-r-full" />}
+                         {activePanel === id && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-gradient-to-t from-indigo-400 via-purple-400 to-pink-400 rounded-r-full" />}
                     </button>
                 ))}
             </nav>

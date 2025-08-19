@@ -39,6 +39,7 @@ const App: React.FC = () => {
   const [improvedResume, setImprovedResume] = useState<ResumeData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState<string>('');
+  const [progress, setProgress] = useState<number>(0);
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [isChatProcessing, setIsChatProcessing] = useState<boolean>(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateIdentifier | TemplateConfig>(TemplateIdentifier.MODERN);
@@ -104,6 +105,7 @@ const App: React.FC = () => {
     setImprovedResume(null);
     setError(null);
     setLoadingMessage('');
+    setProgress(0);
     setConversation([]);
     setIsChatProcessing(false);
     setSelectedTemplate(TemplateIdentifier.MODERN);
@@ -134,14 +136,20 @@ const App: React.FC = () => {
     setAppState(AppState.PROCESSING);
     setError(null);
     
+    let progressInterval: number | undefined;
+
     try {
       setLoadingMessage(t('loadingReading'));
+      setProgress(5);
+      
       const fileReader = new FileReader();
       fileReader.readAsArrayBuffer(pdfFile);
       
       fileReader.onload = async (event) => {
         if (event.target?.result) {
           try {
+            await new Promise(resolve => setTimeout(resolve, 500)); // Give time for first message to render
+            
             const typedarray = new Uint8Array(event.target.result as ArrayBuffer);
             const pdf = await (window as any).pdfjsLib.getDocument(typedarray).promise;
             let originalText = '';
@@ -152,8 +160,18 @@ const App: React.FC = () => {
             }
             
             setLoadingMessage(t('loadingBeautifying'));
+            setProgress(20);
+
+            // Simulate progress during the AI call
+            progressInterval = window.setInterval(() => {
+                setProgress(p => Math.min(p + 5, 90));
+            }, 500);
+            
             const tailoredJobDescription = isTailoringEnabled ? jobDescription : undefined;
             const improvedData = await improveResumeWithAI(originalText, language, tailoredJobDescription);
+
+            clearInterval(progressInterval);
+            setProgress(95);
             setImprovedResume(improvedData);
             
             let welcomeMessage = t('chatWelcome');
@@ -174,10 +192,14 @@ const App: React.FC = () => {
                 welcomeMessage = t('chatWelcomeTailored');
             }
             
+            setProgress(100);
+            await new Promise(resolve => setTimeout(resolve, 300)); // Allow 100% to show briefly
+            
             setConversation([{ role: 'ai', text: welcomeMessage }]);
             setAppState(AppState.COMPLETE);
           } catch (e: any) {
             console.error('Error during processing:', e);
+            if (progressInterval) clearInterval(progressInterval);
             let userMessage;
             if (e instanceof NetworkError) {
                 userMessage = t('errorNetwork');
@@ -198,6 +220,7 @@ const App: React.FC = () => {
 
     } catch (e: any) {
       console.error('Error processing resume:', e);
+      if (progressInterval) clearInterval(progressInterval);
       setError(`${t('errorProcessing')} ${t('errorTryDifferentFile')}.`);
       setAppState(AppState.ERROR);
     }
@@ -565,7 +588,7 @@ const App: React.FC = () => {
             </p>
             <button
               onClick={processResume}
-              className="bg-primary text-primary-foreground font-semibold py-3 px-8 rounded-md shadow-sm transition-transform transform hover:scale-105 hover:bg-primary/90"
+              className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold py-3 px-8 rounded-md shadow-lg transition-transform transform hover:scale-105 hover:shadow-xl"
             >
               {t('beautifyButton')}
             </button>
@@ -580,7 +603,7 @@ const App: React.FC = () => {
       case AppState.FILE_SELECTED:
         return renderInitialView();
       case AppState.PROCESSING:
-        return <LoadingIndicator message={loadingMessage} t={t} />;
+        return <LoadingIndicator message={loadingMessage} progress={progress} t={t} />;
       case AppState.COMPLETE:
         return improvedResume ? (
           <ResumeEditor

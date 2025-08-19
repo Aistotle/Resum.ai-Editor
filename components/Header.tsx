@@ -25,7 +25,7 @@ const LanguageButton: React.FC<{
     <button
         onClick={() => onClick(lang)}
         className={`px-3 py-1 text-xs font-semibold rounded-sm transition-colors ${
-            currentLang === lang ? 'bg-background dark:bg-background text-primary dark:text-primary-foreground shadow-sm' : 'bg-transparent text-muted-foreground hover:text-primary dark:hover:text-primary'
+            currentLang === lang ? 'bg-background dark:bg-foreground text-primary dark:text-primary-foreground shadow-sm' : 'bg-transparent text-muted-foreground hover:text-primary dark:hover:text-primary'
         }`}
     >
         {children}
@@ -70,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ onReset, isEditorView, theme, onThemeCh
                          <>
                             <button
                                 onClick={onReset}
-                                className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary dark:hover:text-primary transition-colors p-2 rounded-md hover:bg-secondary"
+                                className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary dark:hover:text-primary transition-colors p-2 rounded-md hover:bg-secondary border border-border"
                             >
                                 <RefreshCcw className="w-4 h-4" />
                                 <span className="hidden sm:inline">{t('startOver')}</span>
@@ -96,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({ onReset, isEditorView, theme, onThemeCh
                             </button>
                          </>
                     )}
-                     <div className="flex items-center bg-secondary p-1 rounded-md">
+                     <div className="flex items-center bg-secondary p-1 rounded-md border border-border">
                         <LanguageButton lang="da" currentLang={language} onClick={onLanguageChange}>DA</LanguageButton>
                         <LanguageButton lang="en" currentLang={language} onClick={onLanguageChange}>EN</LanguageButton>
                     </div>
