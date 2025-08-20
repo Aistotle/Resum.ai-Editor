@@ -60,6 +60,11 @@ interface ResumeEditorProps {
     onGenerateCoverLetter: (jobDescription: string) => void;
     isGeneratingCoverLetter: boolean;
     coverLetterError: string | null;
+    // New props for consultant
+    consultantConversation: ConversationMessage[];
+    isConsultantChatProcessing: boolean;
+    onConsultantMessage: (message: string) => void;
+    onGenerateInitialReport: () => void;
 }
 
 const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
@@ -212,7 +217,7 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                  <div className={`h-full overflow-hidden transition-opacity duration-200 ${isControlPanelOpen ? 'opacity-100' : 'p-0 opacity-0'}`}>
                     <ControlPanel 
                         {...props}
-                        availablePanels={editorView === EditorView.RESUME ? ['AI Chat', 'Design', 'Templates'] : ['AI Chat']}
+                        availablePanels={editorView === EditorView.RESUME ? ['AI Chat', 'AI Consultant', 'Design', 'Templates'] : ['AI Chat']}
                     />
                  </div>
             </aside>

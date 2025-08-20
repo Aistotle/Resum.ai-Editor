@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ResumeData, CoverLetterData, TemplateConfig, LayoutType, TwoColumnLayoutRatio, SectionName, Language } from '../types';
+import { ResumeData, CoverLetterData, TemplateConfig, LayoutType, TwoColumnLayoutRatio, SectionName, Language, ConversationMessage } from '../types';
 
 const API_KEY = process.env.API_KEY;
 
@@ -526,6 +526,89 @@ export const editCoverLetterWithAI = async (
         return JSON.parse(jsonText);
     } catch (error: any) {
         console.error("Error calling Gemini API in editCoverLetterWithAI:", error);
+        if (error.message.toLowerCase().includes('fetch')) {
+            throw new NetworkError('Failed to fetch from Gemini API.');
+        }
+        throw new APIError(error.message);
+    }
+};
+
+export const getResumeFeedbackWithAI = async (resumeData: ResumeData, language: Language): Promise<string> => {
+    const languageInstruction = language === 'da'
+        ? "You MUST respond in fluent, professional Danish."
+        : "You MUST respond in fluent, professional English.";
+
+    const prompt = `
+        You are "Obi", an expert career coach and resume consultant. You are friendly, encouraging, and provide highly actionable feedback.
+        Your task is to analyze the user's resume (provided as JSON) and write a brief, helpful report.
+
+        **Report Structure:**
+        1.  **Greeting:** Start with a friendly opening like "Hello! I've had a look at your resume, and here are my thoughts:"
+        2.  **Overall Impression:** Give a positive, one-sentence summary of the resume's strength (e.g., "This is a strong resume for a [Job Area] professional, with great detail in the experience section.").
+        3.  **Two Actionable Suggestions:** Provide two clear, concise, and numbered suggestions for improvement. Each suggestion should be specific to the user's resume content. For example, instead of "Improve your summary," say "Your summary is a good start. To make it even more impactful, try adding a specific, quantifiable achievement from your time at [Previous Company]."
+        4.  **Call to Action:** End by inviting the user to ask follow-up questions, like "Feel free to ask me anything about how to improve it further!".
+
+        **CRITICAL:** Keep the entire report concise, around 4-5 sentences total. Format your response with markdown for readability (e.g., using **bolding** and numbered lists). Do not output JSON.
+        ${languageInstruction}
+
+        Resume Data:
+        ---
+        ${JSON.stringify(resumeData, null, 2)}
+        ---
+    `;
+    
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+        return response.text.trim();
+    } catch (error: any) {
+        console.error("Error calling Gemini API in getResumeFeedbackWithAI:", error);
+        if (error.message.toLowerCase().includes('fetch')) {
+            throw new NetworkError('Failed to fetch from Gemini API.');
+        }
+        throw new APIError(error.message);
+    }
+};
+
+export const getConsultantFollowUpWithAI = async (resumeData: ResumeData, conversation: ConversationMessage[], language: Language): Promise<string> => {
+    const languageInstruction = language === 'da'
+        ? "You MUST respond in fluent, professional Danish."
+        : "You MUST respond in fluent, professional English.";
+
+    const history = conversation.map(m => `${m.role === 'ai' ? 'Obi' : 'User'}: ${m.text}`).join('\n');
+
+    const prompt = `
+        You are "Obi", an expert career coach and resume consultant, continuing a conversation with a user about their resume.
+        You are friendly, encouraging, and provide highly actionable feedback.
+        The user's resume is provided below for context. You MUST refer to it when answering questions.
+        The conversation history is also provided.
+
+        Your task is to respond to the user's latest message in a helpful and conversational way.
+        ${languageInstruction}
+
+        Resume Data:
+        ---
+        ${JSON.stringify(resumeData, null, 2)}
+        ---
+
+        Conversation History:
+        ---
+        ${history}
+        ---
+
+        Respond to the last user message. Do not output JSON. Your response should be just the text of your reply.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+        return response.text.trim();
+    } catch (error: any) {
+        console.error("Error calling Gemini API in getConsultantFollowUpWithAI:", error);
         if (error.message.toLowerCase().includes('fetch')) {
             throw new NetworkError('Failed to fetch from Gemini API.');
         }

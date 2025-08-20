@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppState, ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, ModalState, SectionId, EditorView, CoverLetterData } from './types';
-import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI, generateCoverLetterWithAI, editCoverLetterWithAI, NetworkError, APIError, ContentError } from './services/geminiService';
+import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI, generateCoverLetterWithAI, editCoverLetterWithAI, getResumeFeedbackWithAI, getConsultantFollowUpWithAI, NetworkError, APIError, ContentError } from './services/geminiService';
 import { exportToPdf } from './services/pdfService';
 import FileUpload from './components/FileUpload';
 import LoadingIndicator from './components/LoadingIndicator';
@@ -46,6 +46,8 @@ const App: React.FC = () => {
   const [progress, setProgress] = useState<number>(0);
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [isChatProcessing, setIsChatProcessing] = useState<boolean>(false);
+  const [consultantConversation, setConsultantConversation] = useState<ConversationMessage[]>([]);
+  const [isConsultantChatProcessing, setIsConsultantChatProcessing] = useState<boolean>(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateIdentifier | TemplateConfig>(TemplateIdentifier.MODERN);
   const [designOptions, setDesignOptions] = useState<DesignOptions>(defaultDesignOptions);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -112,6 +114,8 @@ const App: React.FC = () => {
     setProgress(0);
     setConversation([]);
     setIsChatProcessing(false);
+    setConsultantConversation([]);
+    setIsConsultantChatProcessing(false);
     setSelectedTemplate(TemplateIdentifier.MODERN);
     setDesignOptions(defaultDesignOptions);
     setHasOverflow(false);
@@ -264,6 +268,55 @@ const App: React.FC = () => {
     }
 
   }, [improvedResume, conversation, language, t, editorView, coverLetter]);
+
+  const handleGenerateInitialReport = useCallback(async () => {
+    if (!improvedResume || consultantConversation.length > 0) return;
+
+    setIsConsultantChatProcessing(true);
+    const welcomeMessage: ConversationMessage = { role: 'ai', text: t('consultantWelcome') };
+    setConsultantConversation([welcomeMessage]);
+
+    try {
+        const report = await getResumeFeedbackWithAI(improvedResume, language);
+        setConsultantConversation([{ role: 'ai', text: report }]);
+    } catch (e: any) {
+        console.error("Error generating initial report:", e);
+        let errorMessage = t('consultantError');
+        if (e instanceof NetworkError) {
+            errorMessage = t('errorNetwork');
+        } else if (e instanceof APIError) {
+            errorMessage = t('errorAPI');
+        }
+        setConsultantConversation([{ role: 'ai', text: errorMessage }]);
+    } finally {
+        setIsConsultantChatProcessing(false);
+    }
+  }, [improvedResume, consultantConversation.length, language, t]);
+
+  const handleConsultantMessage = useCallback(async (message: string) => {
+    if (!improvedResume) return;
+
+    const newConversation: ConversationMessage[] = [...consultantConversation, { role: 'user', text: message }];
+    setConsultantConversation(newConversation);
+    setIsConsultantChatProcessing(true);
+    setError(null);
+
+    try {
+        const responseText = await getConsultantFollowUpWithAI(improvedResume, newConversation, language);
+        setConsultantConversation([...newConversation, { role: 'ai', text: responseText }]);
+    } catch (e: any) {
+        console.error('Error with consultant chat:', e);
+        let errorMessage = t('consultantError');
+        if (e instanceof NetworkError) {
+            errorMessage = t('errorNetwork');
+        } else if (e instanceof APIError) {
+            errorMessage = t('errorAPI');
+        }
+        setConsultantConversation([...newConversation, { role: 'ai', text: errorMessage }]);
+    } finally {
+        setIsConsultantChatProcessing(false);
+    }
+  }, [improvedResume, consultantConversation, language, t]);
   
   const handleResumeUpdate = useCallback((path: string, value: any) => {
     setImprovedResume(prev => {
@@ -655,6 +708,12 @@ const App: React.FC = () => {
             onGenerateCoverLetter={handleGenerateCoverLetter}
             isGeneratingCoverLetter={isGeneratingCoverLetter}
             coverLetterError={error}
+
+            // New props for consultant
+            consultantConversation={consultantConversation}
+            isConsultantChatProcessing={isConsultantChatProcessing}
+            onConsultantMessage={handleConsultantMessage}
+            onGenerateInitialReport={handleGenerateInitialReport}
           />
         ) : (
           <ErrorMessage message="Something went wrong displaying the resume." onRetry={resetState} t={t} />

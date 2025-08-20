@@ -3,7 +3,8 @@ import { TemplateIdentifier, ConversationMessage, DesignOptions, TemplateConfig,
 import TemplateSwitcher from './TemplateSwitcher';
 import DesignControls from './DesignControls';
 import Chatbot from './Chatbot';
-import { MessageSquare, Palette, LayoutGrid } from './Icons';
+import ConsultantChatbot from './ConsultantChatbot';
+import { MessageSquare, Palette, LayoutGrid, SparklesIcon } from './Icons';
 
 interface ControlPanelProps {
     resumeData: ResumeData;
@@ -23,13 +24,18 @@ interface ControlPanelProps {
     onProfilePictureChange: (file: File | null) => void;
     isLiveEditingEnabled: boolean;
     onLiveEditingChange: (enabled: boolean) => void;
-    availablePanels?: Panel[];
+    availablePanels: Panel[];
+    // New props for consultant
+    consultantConversation: ConversationMessage[];
+    isConsultantChatProcessing: boolean;
+    onConsultantMessage: (message: string) => void;
+    onGenerateInitialReport: () => void;
 }
 
-type Panel = 'AI Chat' | 'Design' | 'Templates';
+export type Panel = 'AI Chat' | 'Design' | 'Templates' | 'AI Consultant';
 
 const ControlPanel: React.FC<ControlPanelProps> = (props) => {
-    const { t, availablePanels = ['AI Chat', 'Design', 'Templates'] } = props;
+    const { t, availablePanels } = props;
     const [activePanel, setActivePanel] = useState<Panel>(availablePanels[0]);
 
     useEffect(() => {
@@ -40,6 +46,7 @@ const ControlPanel: React.FC<ControlPanelProps> = (props) => {
 
     const panelConfig: { id: Panel; icon: React.FC<React.SVGProps<SVGSVGElement>>, labelKey: string }[] = [
         { id: 'AI Chat', icon: MessageSquare, labelKey: 'panelChat' },
+        { id: 'AI Consultant', icon: SparklesIcon, labelKey: 'panelConsultant' },
         { id: 'Design', icon: Palette, labelKey: 'panelDesign' },
         { id: 'Templates', icon: LayoutGrid, labelKey: 'panelTemplates' },
     ];
@@ -70,6 +77,16 @@ const ControlPanel: React.FC<ControlPanelProps> = (props) => {
                         onProfilePictureChange={props.onProfilePictureChange}
                         isLiveEditingEnabled={props.isLiveEditingEnabled}
                         onLiveEditingChange={props.onLiveEditingChange}
+                    />
+                );
+            case 'AI Consultant':
+                 return (
+                    <ConsultantChatbot
+                        conversation={props.consultantConversation}
+                        isProcessing={props.isConsultantChatProcessing}
+                        onSendMessage={props.onConsultantMessage}
+                        onGenerateInitialReport={props.onGenerateInitialReport}
+                        t={t}
                     />
                 );
             case 'AI Chat':

@@ -103,6 +103,7 @@ export const translations: Record<Language, any> = {
     panelChat: "AI Chat",
     panelDesign: "Design",
     panelTemplates: "Skabeloner",
+    panelConsultant: "AI Konsulent",
     
     // Chatbot
     chatHeader: "AI Editor Chat",
@@ -113,6 +114,12 @@ export const translations: Record<Language, any> = {
     chatUpdate: "Jeg har opdateret dit CV. Hvad er det næste?",
     chatUpdateCoverLetter: "Jeg har opdateret din ansøgning. Andre ændringer?",
     chatError: "Beklager, jeg kunne ikke foretage den ændring. Kan du prøve at omformulere?",
+    
+    // Consultant Chatbot
+    consultantHeader: "AI CV Konsulent",
+    consultantSubtitle: "Få feedback på dit CV.",
+    consultantWelcome: "Hej! Jeg analyserer dit CV for at give dig feedback. Et øjeblik...",
+    consultantError: "Beklager, jeg har problemer med at give feedback lige nu. Prøv venligst igen senere.",
 
     // Design Controls
     designHeader: "Design & Rediger",
@@ -278,6 +285,7 @@ export const translations: Record<Language, any> = {
     panelChat: "AI Chat",
     panelDesign: "Design",
     panelTemplates: "Templates",
+    panelConsultant: "AI Consultant",
 
     // Chatbot
     chatHeader: "AI Editor Chat",
@@ -288,6 +296,12 @@ export const translations: Record<Language, any> = {
     chatUpdate: "I've updated your resume. What's next?",
     chatUpdateCoverLetter: "I've updated your cover letter. Any other changes?",
     chatError: "I'm sorry, I couldn't make that change. Could you try rephrasing?",
+
+    // Consultant Chatbot
+    consultantHeader: "AI Resume Consultant",
+    consultantSubtitle: "Get feedback on your resume.",
+    consultantWelcome: "Hello! I'm analyzing your resume to provide some feedback. One moment...",
+    consultantError: "I'm sorry, I'm having trouble providing feedback right now. Please try again later.",
 
     // Design Controls
     designHeader: "Design & Edit",

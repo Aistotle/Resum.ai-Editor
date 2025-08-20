@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ConversationMessage } from '../types';
-import { Logo, SendIcon } from './Icons';
+import { SparklesIcon, SendIcon } from './Icons';
 import ReactMarkdown from 'https://esm.sh/react-markdown@9';
 
-interface ChatbotProps {
+interface ConsultantChatbotProps {
     conversation: ConversationMessage[];
     isProcessing: boolean;
     onSendMessage: (message: string) => void;
+    onGenerateInitialReport: () => void;
     t: (key: string) => string;
 }
 
-const Chatbot: React.FC<ChatbotProps> = ({ conversation, isProcessing, onSendMessage, t }) => {
+const ConsultantChatbot: React.FC<ConsultantChatbotProps> = ({ conversation, isProcessing, onSendMessage, onGenerateInitialReport, t }) => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
@@ -18,6 +19,12 @@ const Chatbot: React.FC<ChatbotProps> = ({ conversation, isProcessing, onSendMes
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
+    useEffect(() => {
+        if (conversation.length === 0) {
+            onGenerateInitialReport();
+        }
+    }, [onGenerateInitialReport, conversation.length]);
+    
     useEffect(scrollToBottom, [conversation, isProcessing]);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -31,14 +38,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ conversation, isProcessing, onSendMes
     return (
         <div className="flex flex-col h-full bg-transparent font-sans">
             <header className="p-4 border-b border-border flex-shrink-0">
-                <h3 className="font-bold text-lg text-secondary-foreground">{t('chatHeader')}</h3>
-                <p className="text-sm text-muted-foreground">{t('chatSubtitle')}</p>
+                <h3 className="font-bold text-lg text-secondary-foreground">{t('consultantHeader')}</h3>
+                <p className="text-sm text-muted-foreground">{t('consultantSubtitle')}</p>
             </header>
             <div className="flex-grow p-4 overflow-y-auto">
                 <div className="space-y-4">
                     {conversation.map((msg, index) => (
                         <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                            {msg.role === 'ai' && <div className="w-8 h-8 flex-shrink-0 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center"><Logo className="w-5 h-5"/></div>}
+                            {msg.role === 'ai' && <div className="w-8 h-8 flex-shrink-0 rounded-full bg-secondary text-primary flex items-center justify-center"><SparklesIcon className="w-5 h-5"/></div>}
                             <div className={`px-4 py-2 rounded-lg max-w-xs md:max-w-md break-words shadow-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'}`}>
                                 <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
                                     <ReactMarkdown>{msg.text}</ReactMarkdown>
@@ -46,9 +53,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ conversation, isProcessing, onSendMes
                             </div>
                         </div>
                     ))}
-                    {isProcessing && (
+                    {isProcessing && conversation.length > 0 && (
                          <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center"><Logo className="w-5 h-5"/></div>
+                            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-secondary text-primary flex items-center justify-center"><SparklesIcon className="w-5 h-5"/></div>
                             <div className="px-4 py-3 rounded-lg bg-secondary text-secondary-foreground">
                                 <div className="flex items-center space-x-1.5">
                                     <span className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.3s]"></span>
@@ -80,4 +87,4 @@ const Chatbot: React.FC<ChatbotProps> = ({ conversation, isProcessing, onSendMes
     );
 };
 
-export default Chatbot;
+export default ConsultantChatbot;
