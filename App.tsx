@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppState, ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, ModalState, SectionId, EditorView, CoverLetterData } from './types';
-import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI, generateCoverLetterWithAI, editCoverLetterWithAI, getResumeFeedbackWithAI, getConsultantFollowUpWithAI, NetworkError, APIError, ContentError } from './services/geminiService';
+import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI, generateCoverLetterWithAI, editCoverLetterWithAI, getConsultantFollowUpWithAI, NetworkError, APIError, ContentError } from './services/geminiService';
 import { exportToPdf } from './services/pdfService';
 import FileUpload from './components/FileUpload';
 import LoadingIndicator from './components/LoadingIndicator';
@@ -104,6 +104,11 @@ const App: React.FC = () => {
     document.documentElement.lang = language;
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme, language]);
+  
+  useEffect(() => {
+      // Set the initial welcome message for the consultant chat when the app loads or language changes.
+      setConsultantConversation([{ role: 'ai', text: t('consultantWelcome') }]);
+  }, [language, t]);
 
   const resetState = () => {
     setAppState(AppState.INITIAL);
@@ -114,7 +119,7 @@ const App: React.FC = () => {
     setProgress(0);
     setConversation([]);
     setIsChatProcessing(false);
-    setConsultantConversation([]);
+    setConsultantConversation([{ role: 'ai', text: t('consultantWelcome') }]); // Reset with welcome message
     setIsConsultantChatProcessing(false);
     setSelectedTemplate(TemplateIdentifier.MODERN);
     setDesignOptions(defaultDesignOptions);
@@ -267,31 +272,7 @@ const App: React.FC = () => {
     }
 
   }, [improvedResume, conversation, language, t, editorView, coverLetter]);
-
-  const handleGenerateInitialReport = useCallback(async () => {
-    if (!improvedResume || consultantConversation.length > 0) return;
-
-    setIsConsultantChatProcessing(true);
-    const welcomeMessage: ConversationMessage = { role: 'ai', text: t('consultantWelcome') };
-    setConsultantConversation([welcomeMessage]);
-
-    try {
-        const report = await getResumeFeedbackWithAI(improvedResume, language);
-        setConsultantConversation([{ role: 'ai', text: report }]);
-    } catch (e: any) {
-        console.error("Error generating initial report:", e);
-        let errorMessage = t('consultantError');
-        if (e instanceof NetworkError) {
-            errorMessage = t('errorNetwork');
-        } else if (e instanceof APIError) {
-            errorMessage = t('errorAPI');
-        }
-        setConsultantConversation([{ role: 'ai', text: errorMessage }]);
-    } finally {
-        setIsConsultantChatProcessing(false);
-    }
-  }, [improvedResume, consultantConversation.length, language, t]);
-
+  
   const handleConsultantMessage = useCallback(async (message: string) => {
     if (!improvedResume) return;
 
@@ -710,7 +691,6 @@ const App: React.FC = () => {
             consultantConversation={consultantConversation}
             isConsultantChatProcessing={isConsultantChatProcessing}
             onConsultantMessage={handleConsultantMessage}
-            onGenerateInitialReport={handleGenerateInitialReport}
           />
         ) : (
           <ErrorMessage message="Something went wrong displaying the resume." onRetry={resetState} t={t} />

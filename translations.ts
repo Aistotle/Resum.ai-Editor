@@ -118,8 +118,11 @@ export const translations: Record<Language, any> = {
     // Consultant Chatbot
     consultantHeader: "AI CV Konsulent",
     consultantSubtitle: "Få feedback på dit CV.",
-    consultantWelcome: "Hej! Jeg analyserer dit CV for at give dig feedback. Et øjeblik...",
+    consultantWelcome: "Hej! Jeg er din AI CV Konsulent. Hvordan kan jeg hjælpe dig i dag? Du kan starte med et af forslagene nedenfor eller skrive dit eget spørgsmål.",
     consultantError: "Beklager, jeg har problemer med at give feedback lige nu. Prøv venligst igen senere.",
+    consultantPrompt1: "Giv mig generel feedback",
+    consultantPrompt2: "Hvad er de 3 største svagheder?",
+    consultantPrompt3: "Hvordan kan jeg forbedre resuméet?",
 
     // Design Controls
     designHeader: "Design & Rediger",
@@ -301,8 +304,11 @@ export const translations: Record<Language, any> = {
     // Consultant Chatbot
     consultantHeader: "AI Resume Consultant",
     consultantSubtitle: "Get feedback on your resume.",
-    consultantWelcome: "Hello! I'm analyzing your resume to provide some feedback. One moment...",
+    consultantWelcome: "Hello! I'm your AI Resume Consultant. How can I help you today? You can start with one of the suggestions below or ask your own question.",
     consultantError: "I'm sorry, I'm having trouble providing feedback right now. Please try again later.",
+    consultantPrompt1: "Give me general feedback",
+    consultantPrompt2: "What are the top 3 weaknesses?",
+    consultantPrompt3: "How can I improve the summary?",
 
     // Design Controls
     designHeader: "Design & Edit",

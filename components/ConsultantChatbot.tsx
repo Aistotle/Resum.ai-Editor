@@ -7,24 +7,19 @@ interface ConsultantChatbotProps {
     conversation: ConversationMessage[];
     isProcessing: boolean;
     onSendMessage: (message: string) => void;
-    onGenerateInitialReport: () => void;
     t: (key: string) => string;
 }
 
-const ConsultantChatbot: React.FC<ConsultantChatbotProps> = ({ conversation, isProcessing, onSendMessage, onGenerateInitialReport, t }) => {
+const ConsultantChatbot: React.FC<ConsultantChatbotProps> = ({ conversation, isProcessing, onSendMessage, t }) => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
+
+    const isInitialState = conversation.length === 1 && conversation[0].role === 'ai' && !isProcessing;
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    useEffect(() => {
-        if (conversation.length === 0) {
-            onGenerateInitialReport();
-        }
-    }, [onGenerateInitialReport, conversation.length]);
-    
     useEffect(scrollToBottom, [conversation, isProcessing]);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -34,6 +29,22 @@ const ConsultantChatbot: React.FC<ConsultantChatbotProps> = ({ conversation, isP
             setInput('');
         }
     };
+
+    const handlePromptClick = (promptKey: string) => {
+        if (!isProcessing) {
+            onSendMessage(t(promptKey));
+        }
+    };
+    
+    const PromptButton: React.FC<{promptKey: string}> = ({promptKey}) => (
+        <button
+            onClick={() => handlePromptClick(promptKey)}
+            disabled={isProcessing}
+            className="w-full text-left p-3 bg-secondary hover:bg-background border border-border rounded-lg text-sm font-semibold text-secondary-foreground transition-colors disabled:opacity-50"
+        >
+            {t(promptKey)}
+        </button>
+    );
 
     return (
         <div className="flex flex-col h-full bg-transparent font-sans">
@@ -53,7 +64,16 @@ const ConsultantChatbot: React.FC<ConsultantChatbotProps> = ({ conversation, isP
                             </div>
                         </div>
                     ))}
-                    {isProcessing && conversation.length > 0 && (
+                    
+                    {isInitialState && (
+                        <div className="mt-4 space-y-2 animate-fade-in">
+                            <PromptButton promptKey="consultantPrompt1" />
+                            <PromptButton promptKey="consultantPrompt2" />
+                            <PromptButton promptKey="consultantPrompt3" />
+                        </div>
+                    )}
+
+                    {isProcessing && (
                          <div className="flex items-start gap-3">
                             <div className="w-8 h-8 flex-shrink-0 rounded-full bg-secondary text-primary flex items-center justify-center"><SparklesIcon className="w-5 h-5"/></div>
                             <div className="px-4 py-3 rounded-lg bg-secondary text-secondary-foreground">

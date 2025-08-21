@@ -1,6 +1,7 @@
 
 
-import React, { useRef, useEffect, useCallback } from 'react';
+
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, SectionId, EditorView, CoverLetterData } from '../types';
 import ResumeTemplate from './ResumeTemplate';
 import TemplateClassic from './TemplateClassic';
@@ -63,7 +64,6 @@ interface ResumeEditorProps {
     consultantConversation: ConversationMessage[];
     isConsultantChatProcessing: boolean;
     onConsultantMessage: (message: string) => void;
-    onGenerateInitialReport: () => void;
 }
 
 const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
@@ -77,7 +77,51 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
         zoomLevel, isControlPanelOpen, editorView, onEditorViewChange
     } = props;
     
-    const handleMouseDown = useCallback((event: MouseEvent) => {
+    // --- Resizable Panel Logic ---
+    const [controlPanelWidth, setControlPanelWidth] = useState(384);
+    const isResizing = useRef(false);
+
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        if (!isResizing.current) return;
+        // Calculate new width from the right edge of the screen
+        const newWidth = window.innerWidth - e.clientX;
+        
+        // Clamp the width between min and max values
+        const minWidth = 320; // Corresponds to Tailwind's `w-80`
+        const maxWidth = 640; // Corresponds to Tailwind's `w-[40rem]`
+        const clampedWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+        
+        setControlPanelWidth(clampedWidth);
+    }, []);
+    
+    const handleMouseUp = useCallback(() => {
+        isResizing.current = false;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = 'auto';
+    }, [handleMouseMove]);
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        isResizing.current = true;
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    };
+
+    useEffect(() => {
+        // Cleanup function to remove event listeners if the component unmounts
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [handleMouseMove, handleMouseUp]);
+    // --- End Resizable Panel Logic ---
+
+
+    const handleMouseDownOutside = useCallback((event: MouseEvent) => {
         if (tooltipRef.current && !tooltipRef.current.contains(event.target as Node)) {
              onSelectionTooltipChange({ visible: false });
         }
@@ -85,11 +129,11 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
 
     useEffect(() => {
         // This listener closes the tooltip if you click anywhere outside of it.
-        document.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mousedown', handleMouseDownOutside);
         return () => {
-            document.removeEventListener('mousedown', handleMouseDown);
+            document.removeEventListener('mousedown', handleMouseDownOutside);
         };
-    }, [handleMouseDown]);
+    }, [handleMouseDownOutside]);
 
     const renderPreview = () => {
         const templateProps = {
@@ -206,18 +250,37 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                         />
                     )}
                 </div>
-                <ZoomControls zoomLevel={props.zoomLevel} onZoomChange={props.onZoomChange} t={t} isControlPanelOpen={isControlPanelOpen} />
+                <ZoomControls 
+                    zoomLevel={props.zoomLevel} 
+                    onZoomChange={props.onZoomChange} 
+                    t={t} 
+                    isControlPanelOpen={isControlPanelOpen} 
+                    controlPanelWidth={controlPanelWidth}
+                />
             </div>
             
-            {/* Control Panel */}
-            <aside ref={controlPanelRef} className={`flex-shrink-0 transition-all duration-300 ease-in-out bg-foreground border-l border-border ${isControlPanelOpen ? 'w-full max-w-sm' : 'w-0'}`}>
-                 <div className={`h-full overflow-hidden transition-opacity duration-200 ${isControlPanelOpen ? 'opacity-100' : 'p-0 opacity-0'}`}>
-                    <ControlPanel 
-                        {...props}
-                        availablePanels={editorView === EditorView.RESUME ? ['AI Chat', 'AI Consultant', 'Design', 'Templates'] : ['AI Chat']}
-                    />
-                 </div>
-            </aside>
+            {/* Resizable Control Panel Wrapper */}
+            <div 
+                className={`relative flex-shrink-0 bg-foreground border-l border-border transition-all duration-75 ease-out ${!isControlPanelOpen ? 'w-0 !border-l-0' : ''}`}
+                style={isControlPanelOpen ? { width: `${controlPanelWidth}px` } : {}}
+            >
+                 {isControlPanelOpen && (
+                    <div 
+                        onMouseDown={handleMouseDown}
+                        className="absolute top-0 left-0 -translate-x-1/2 w-2 h-full cursor-col-resize z-20 group"
+                    >
+                         <div className="w-0.5 h-full bg-transparent group-hover:bg-primary/50 transition-colors duration-200 ml-auto"></div>
+                    </div>
+                 )}
+                 <aside ref={controlPanelRef} className="w-full h-full">
+                     <div className={`h-full overflow-hidden transition-opacity duration-200 ${isControlPanelOpen ? 'opacity-100' : 'p-0 opacity-0'}`}>
+                        <ControlPanel 
+                            {...props}
+                            availablePanels={editorView === EditorView.RESUME ? ['AI Chat', 'AI Consultant', 'Design', 'Templates'] : ['AI Chat']}
+                        />
+                     </div>
+                 </aside>
+            </div>
         </div>
     );
 };

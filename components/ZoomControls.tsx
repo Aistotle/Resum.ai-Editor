@@ -6,9 +6,10 @@ interface ZoomControlsProps {
   onZoomChange: (zoom: number) => void;
   t: (key: string) => string;
   isControlPanelOpen: boolean;
+  controlPanelWidth: number;
 }
 
-const ZoomControls: React.FC<ZoomControlsProps> = ({ zoomLevel, onZoomChange, t, isControlPanelOpen }) => {
+const ZoomControls: React.FC<ZoomControlsProps> = ({ zoomLevel, onZoomChange, t, isControlPanelOpen, controlPanelWidth }) => {
   const handleZoom = (amount: number) => {
     onZoomChange(Math.max(50, Math.min(150, zoomLevel + amount)));
   };
@@ -17,8 +18,13 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({ zoomLevel, onZoomChange, t,
     onZoomChange(parseInt(e.target.value, 10));
   };
 
+  const rightPosition = isControlPanelOpen ? `${controlPanelWidth + 24}px` : '24px'; // 24px = 1.5rem
+
   return (
-    <div className={`fixed bottom-6 z-10 flex items-center gap-2 bg-foreground p-2 rounded-full shadow-lg border border-border transition-all duration-300 ${isControlPanelOpen ? 'right-[calc(24rem+1.5rem)]' : 'right-6'}`}>
+    <div 
+        className="fixed bottom-6 z-10 flex items-center gap-2 bg-foreground p-2 rounded-full shadow-lg border border-border transition-all duration-300"
+        style={{ right: rightPosition }}
+    >
       <button
         onClick={() => handleZoom(-10)}
         className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:bg-secondary transition-colors"

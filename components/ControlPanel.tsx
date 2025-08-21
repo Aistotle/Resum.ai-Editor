@@ -29,7 +29,6 @@ interface ControlPanelProps {
     consultantConversation: ConversationMessage[];
     isConsultantChatProcessing: boolean;
     onConsultantMessage: (message: string) => void;
-    onGenerateInitialReport: () => void;
 }
 
 export type Panel = 'AI Chat' | 'Design' | 'Templates' | 'AI Consultant';
@@ -85,7 +84,6 @@ const ControlPanel: React.FC<ControlPanelProps> = (props) => {
                         conversation={props.consultantConversation}
                         isProcessing={props.isConsultantChatProcessing}
                         onSendMessage={props.onConsultantMessage}
-                        onGenerateInitialReport={props.onGenerateInitialReport}
                         t={t}
                     />
                 );
