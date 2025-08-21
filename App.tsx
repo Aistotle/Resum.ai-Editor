@@ -750,7 +750,7 @@ const App: React.FC = () => {
         onToggleSidebar={isEditorView ? () => setIsSidebarOpen(o => !o) : undefined}
         onToggleControlPanel={() => setIsControlPanelOpen(o => !o)}
       />
-      <main className={`w-full transition-all duration-500 ${isEditorView ? 'pt-16' : 'pt-16 sm:pt-20'}`}>
+      <main className={`w-full transition-all duration-500 ${isEditorView ? 'pt-16 h-screen' : 'pt-16 sm:pt-20'}`}>
         { isEditorView ? renderContent() : (
            <div className="w-full h-[calc(100vh-4rem)] flex items-center justify-center px-4">
              {renderContent()}

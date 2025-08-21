@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useMemo } from 'react';
 import { ResumeData, Experience, TemplateConfig, LayoutType, SectionName, DesignOptions, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe } from './Icons';
@@ -94,7 +90,7 @@ const TemplateDynamic: React.FC<DynamicTemplateWithConfig> = (props) => {
                                 <Editable value={job.location} path={`experience[${globalJobIndex}].location`} {...editableProps} />
                             </div>
                         </div>
-                         <ul className="list-disc list-inside space-y-1.5 pl-2 mt-2" style={{...typography.body, color: typography.body.color || colors.text}}>
+                         <ul className="list-disc list-outside space-y-1.5 pl-5 mt-2" style={{...typography.body, color: typography.body.color || colors.text}}>
                             {job.description.map((desc, i) => <li key={i}><Editable value={desc} path={`experience[${globalJobIndex}].description[${i}]`} {...editableProps} /></li>)}
                          </ul>
                     </div>
@@ -147,7 +143,9 @@ const TemplateDynamic: React.FC<DynamicTemplateWithConfig> = (props) => {
             style={{ 
                 width: '100%', 
                 maxWidth: '8.27in', 
-                height: '11.69in', 
+                height: '11.69in',
+                minHeight: '11.69in',
+                maxHeight: '11.69in',
                 overflow: 'hidden',
                 boxSizing: 'border-box',
                 padding: layout.padding,

@@ -31,6 +31,8 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
     .resume-page { 
         width: 8.27in; 
         height: 11.69in; 
+        min-height: 11.69in;
+        max-height: 11.69in;
         box-sizing: border-box; 
         overflow: hidden; 
     }

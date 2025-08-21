@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useMemo } from 'react';
 import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
 import Editable from './Editable';
@@ -26,6 +22,8 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
         color: var(--ink);
         width: 210mm;
         height: 297mm;
+        min-height: 297mm;
+        max-height: 297mm;
         background: white;
         position: relative;
         box-shadow: 0 10px 30px rgba(24,40,100,.12);

@@ -29,7 +29,9 @@ const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
         style={{ 
             width: '100%', 
             maxWidth: '8.27in', 
-            height: '11.69in', 
+            height: '11.69in',
+            minHeight: '11.69in',
+            maxHeight: '11.69in',
             overflow: 'hidden',
             boxSizing: 'border-box',
             fontFamily: 'var(--body-font)',
@@ -187,7 +189,7 @@ const TemplateProfessional: React.FC<TemplateProps> = (props) => {
               <Editable value={job.company} path={`experience[${globalJobIndex}].company`} {...editableProps} className="text-md font-semibold" style={{color: 'var(--primary-color)'}} />
               <Editable value={job.period} path={`experience[${globalJobIndex}].period`} {...editableProps} className="text-sm font-medium text-gray-500" />
             </div>
-            <ul className="list-disc list-inside text-gray-700 space-y-1.5 pl-2 leading-normal">
+            <ul className="list-disc list-outside text-gray-700 space-y-1.5 pl-5 leading-normal">
               {job.description.map((desc, i) => <li key={i}><Editable value={desc} path={`experience[${globalJobIndex}].description[${i}]`} {...editableProps} /></li>)}
             </ul>
           </div>

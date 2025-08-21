@@ -33,7 +33,9 @@ const Page: React.FC<{children: React.ReactNode}> = ({ children }) => (
         style={{ 
             width: '100%', 
             maxWidth: '8.27in', 
-            height: '11.69in', 
+            height: '11.69in',
+            minHeight: '11.69in',
+            maxHeight: '11.69in',
             overflow: 'hidden',
             boxSizing: 'border-box',
             fontFamily: 'var(--body-font)'
@@ -265,7 +267,7 @@ const ResumeTemplate: React.FC<TemplateProps> = (props) => {
                         </div>
                     </div>
                     <Editable value={job.period} path={`experience[${globalJobIndex}].period`} {...editableProps} className="text-xs font-medium text-gray-600 mb-2" />
-                    <ul className="list-disc list-inside text-gray-700 space-y-1.5 pl-2 leading-normal">
+                    <ul className="list-disc list-outside text-gray-700 space-y-1.5 pl-5 leading-normal">
                     {job.description.map((desc, i) => <li key={i}><Editable value={desc} path={`experience[${globalJobIndex}].description[${i}]`} {...editableProps} /></li>)}
                     </ul>
                 </div>
@@ -379,7 +381,7 @@ const ResumeTemplate: React.FC<TemplateProps> = (props) => {
                            <Editable value={job.location} path={`experience[${globalJobIndex}].location`} {...editableProps} />
                         </div>
                         </div>
-                        <ul className="list-disc list-inside text-gray-700 space-y-1.5 pl-2 leading-normal">
+                        <ul className="list-disc list-outside text-gray-700 space-y-1.5 pl-5 leading-normal">
                         {job.description.map((desc, i) => <li key={i}><Editable value={desc} path={`experience[${globalJobIndex}].description[${i}]`} {...editableProps} /></li>)}
                         </ul>
                     </div>
