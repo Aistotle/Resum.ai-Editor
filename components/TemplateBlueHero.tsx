@@ -1,5 +1,8 @@
 
-import React, { useEffect, useMemo } from 'react';
+
+
+
+import React, { useMemo } from 'react';
 import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
 import Editable from './Editable';
 
@@ -13,11 +16,13 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
       --bg: #f6f9ff;
       --body-font: '${design.bodyFont}', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       --heading-font: '${design.headingFont}', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-size: ${design.fontSize}px;
+      --line-height: ${design.lineHeight};
     }
     .resume-blue-hero.sheet {
         font-family: var(--body-font);
-        font-size: 14.25px;
-        line-height: 1.45;
+        font-size: var(--font-size);
+        line-height: var(--line-height);
         color: var(--ink);
         width: 210mm;
         height: 297mm;
@@ -26,6 +31,7 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
         box-shadow: 0 10px 30px rgba(24,40,100,.12);
         overflow: hidden;
     }
+    ${design.underlineLinks ? `.resume-blue-hero a { text-decoration: underline; }` : ''}
 
     /* ===== Cover Page ===== */
     .resume-blue-hero .cover{ position:absolute; inset:0; display:grid; grid-template-rows: 1fr auto; }
@@ -67,7 +73,7 @@ const StyleInjector: React.FC<{ design: DesignOptions }> = ({ design }) => (
     .resume-blue-hero .grid2{ display:grid; grid-template-columns:1fr 1fr; gap: 10mm; }
     .resume-blue-hero .kv{ display:grid; gap:5px; }
     .resume-blue-hero .badge-line{ display:flex; flex-wrap:wrap; gap:6px; }
-    .resume-blue-hero .pill{ padding:5px 9px; background:#eef5ff; border:1px solid var(--line); border-radius:999px; font-size:13px; }
+    .resume-blue-hero .pill{ padding:5px 9px; background:#eef2ff; border:1px solid var(--line); border-radius:999px; font-size:13px; }
 
     .resume-blue-hero .squiggle{ position:absolute; right:12mm; bottom:12mm; width:120px; height:50px; opacity:.45; }
   `}</style>
@@ -90,36 +96,38 @@ const Squiggle: React.FC = () => (
 const getJobWeight = (job: Experience) => 15 + job.description.join(' ').length * 0.1 + job.description.length * 5;
 
 const TemplateBlueHero: React.FC<TemplateProps> = (props) => {
-    const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
+    const { data, design, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
     const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
     const getOriginalIndex = (jobToFind: Experience) => data.experience.findIndex(job => job === jobToFind);
 
     const experiencePages = useMemo(() => {
-        const pages: Experience[][] = [];
-        if (!data.experience || data.experience.length === 0) return pages;
-        
-        const MAX_WEIGHT = 750; 
-        let currentPage: Experience[] = [];
+        const jobs = data.experience || [];
+        if (!jobs.length) return [];
+
+        const CN = 750; // Capacity of a normal experience page
+        const jobWeights = jobs.map(job => getJobWeight(job));
+
+        const pages = [];
+        let currentPageJobs: Experience[] = [];
         let currentWeight = 0;
-        
-        data.experience.forEach(job => {
-            const jobWeight = getJobWeight(job);
-            if (currentWeight + jobWeight > MAX_WEIGHT && currentPage.length > 0) {
-                pages.push(currentPage);
-                currentPage = [];
+
+        jobs.forEach((job, index) => {
+            const weight = jobWeights[index];
+            if (currentWeight + weight > CN && currentPageJobs.length > 0) {
+                pages.push(currentPageJobs);
+                currentPageJobs = [];
                 currentWeight = 0;
             }
-            currentPage.push(job);
-            currentWeight += jobWeight;
+            currentPageJobs.push(job);
+            currentWeight += weight;
         });
-        if (currentPage.length > 0) pages.push(currentPage);
         
+        if (currentPageJobs.length > 0) {
+            pages.push(currentPageJobs);
+        }
+
         return pages;
     }, [data.experience]);
-
-    useEffect(() => {
-        onOverflowChange(experiencePages.length > 1);
-    }, [experiencePages.length, onOverflowChange]);
 
     const skillHighlights = data.skills?.slice(0, 4) || [];
     
@@ -226,7 +234,7 @@ const TemplateBlueHero: React.FC<TemplateProps> = (props) => {
                                 <div id="skills" data-section-id="skills" className="sec scroll-mt-24">
                                     <h3>{t('sectionSkills')}</h3>
                                     <div className="badge-line">
-                                        {data.skills.map((skill, i) => (
+                                        {(data.skills.slice(0, 15)).map((skill, i) => (
                                             <Editable key={i} as="span" value={skill} path={`skills[${i}]`} {...editableProps} className="pill" />
                                         ))}
                                     </div>

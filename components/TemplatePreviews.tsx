@@ -67,6 +67,14 @@ export const StructuredPreview = () => (
     </PreviewContainer>
 );
 
+export const MinimalistPreview = () => (
+    <PreviewContainer>
+        <rect x="25" y="10" width="30" height="8" fill="currentColor" opacity="0.2" />
+        <rect x="10" y="22" width="20" height="2" fill="currentColor" opacity="0.3" />
+        <rect x="10" y="28" width="60" height="62" fill="currentColor" opacity="0.15" />
+    </PreviewContainer>
+);
+
 export const DynamicPreview = () => (
     <PreviewContainer>
         <path d="M20 20 L60 20 L60 80 L20 80 Z" stroke="currentColor" strokeWidth="2" strokeDasharray="4" fill="none" opacity="0.5"/>

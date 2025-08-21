@@ -1,6 +1,4 @@
-
-
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ResumeData, DesignOptions, Experience, SectionId, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe, MapPin, Menu } from './Icons';
 import Editable from './Editable';
@@ -45,77 +43,149 @@ const Page: React.FC<{children: React.ReactNode}> = ({ children }) => (
     </div>
 );
 
-// Heuristic function to estimate space taken by a job experience
-const getJobWeight = (job: Experience): number => {
-    const BASE_WEIGHT = 20; // For metadata like role, company, etc.
-    const CHAR_WEIGHT = 0.1; // Weight per character in description
-    const BULLET_WEIGHT = 5; // Weight per bullet point
-    
-    const descriptionLength = job.description.join(' ').length;
-    const bulletCount = job.description.length;
-
-    return BASE_WEIGHT + (descriptionLength * CHAR_WEIGHT) + (bulletCount * BULLET_WEIGHT);
+// --- Content Weight Calculation ---
+const getWeight = {
+    job: (job: Experience): number => {
+        const descriptionLength = job.description.join(' ').length;
+        return 40 + (descriptionLength * 0.18) + (job.description.length * 8);
+    },
+    summary: (text: string) => text ? 40 + text.length * 0.25 : 0,
+    skills: (items: string[]) => items && items.length > 0 ? 40 + items.join('').length * 0.8 : 0,
+    defaultSection: (items: any[]) => items && items.length > 0 ? 40 + items.length * 35 : 0,
 };
 
 const ResumeTemplate: React.FC<TemplateProps> = (props) => {
-  const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen, layout, onLayoutChange } = props;
+  const { data, design, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen, layout, onLayoutChange } = props;
   
   const [draggedItem, setDraggedItem] = useState<SectionId | null>(null);
   const [dropTarget, setDropTarget] = useState<{ column: 'sidebar' | 'main'; targetId: SectionId | null } | null>(null);
 
-  // Constants for pagination logic. Tuned for this template's layout.
-  const PAGE_1_MAX_WEIGHT = 150; 
-  const SUBSEQUENT_PAGE_MAX_WEIGHT = 550;
+  const { experiencePages } = useMemo(() => {
+    const jobs = data.experience || [];
+    if (!jobs.length) return { experiencePages: [[]] };
 
-  const page1Experience: Experience[] = [];
-  const remainingExperience: Experience[] = [];
+    const PAGE_TOTAL_CAPACITY = 1050;
+    const HEADER_COST = 150;
+    const CN = PAGE_TOTAL_CAPACITY - 50;
 
-  if (data.experience.length > 0) {
-      let currentWeight = 0;
-      const pageLimit = PAGE_1_MAX_WEIGHT;
-      let page1Done = false;
-
-      data.experience.forEach(job => {
-          if (page1Done) {
-              remainingExperience.push(job);
-              return;
-          }
-          const jobWeight = getJobWeight(job);
-          if (currentWeight + jobWeight > pageLimit && page1Experience.length > 0) {
-              page1Done = true;
-              remainingExperience.push(job);
-          } else {
-              page1Experience.push(job);
-              currentWeight += jobWeight;
-          }
-      });
-  }
-  
-  const subsequentPages: Experience[][] = [];
-
-  if (remainingExperience.length > 0) {
-      let currentPage: Experience[] = [];
-      let currentWeight = 0;
-      remainingExperience.forEach(job => {
-        const jobWeight = getJobWeight(job);
-        if (currentWeight + jobWeight > SUBSEQUENT_PAGE_MAX_WEIGHT && currentPage.length > 0) {
-            subsequentPages.push(currentPage);
-            currentPage = [];
-            currentWeight = 0;
+    let sidebarWeight = 0;
+    if (data.profilePicture) sidebarWeight += 150;
+    layout.sidebar.forEach(sectionId => {
+        switch(sectionId) {
+            case 'summary': sidebarWeight += getWeight.summary(data.summary); break;
+            case 'skills': sidebarWeight += getWeight.skills(data.skills); break;
+            case 'education': sidebarWeight += getWeight.defaultSection(data.education); break;
+            case 'profiles': sidebarWeight += getWeight.defaultSection(data.profiles); break;
+            case 'languages': sidebarWeight += getWeight.defaultSection(data.languages); break;
+            case 'certifications': sidebarWeight += getWeight.defaultSection(data.certifications); break;
+            case 'interests': sidebarWeight += getWeight.skills(data.interests || []); break;
         }
-        currentPage.push(job);
-        currentWeight += jobWeight;
-      });
-      subsequentPages.push(currentPage);
-  }
+    });
 
-  useEffect(() => {
-    onOverflowChange(subsequentPages.length > 1);
-  }, [subsequentPages.length, onOverflowChange]);
+    let mainColumnStaticWeight = 0;
+    layout.main.forEach(sectionId => {
+        if (sectionId === 'summary') mainColumnStaticWeight += getWeight.summary(data.summary);
+    });
+
+    const C1 = PAGE_TOTAL_CAPACITY - HEADER_COST - Math.max(sidebarWeight, mainColumnStaticWeight);
+    const jobWeights = jobs.map(job => getWeight.job(job));
+    const W_total = jobWeights.reduce((sum, weight) => sum + weight, 0);
+
+    if (W_total <= C1) {
+        return { experiencePages: [jobs] };
+    }
+    
+    let splitIndex = -1;
+
+    if (W_total <= C1 + CN) {
+        let greedyWeight = 0;
+        let greedySplitIndex = -1;
+        let cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            if (cumulativeWeight + jobWeights[i] <= C1) {
+                cumulativeWeight += jobWeights[i];
+                greedySplitIndex = i;
+                greedyWeight = cumulativeWeight;
+            } else {
+                break;
+            }
+        }
+        
+        let balancedWeight = 0;
+        let balancedSplitIndex = -1;
+        let minDiff = Infinity;
+        cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length - 1; i++) {
+             cumulativeWeight += jobWeights[i];
+             const diff = Math.abs(cumulativeWeight - W_total / 2);
+             if (diff < minDiff && cumulativeWeight <= C1) {
+                 minDiff = diff;
+                 balancedSplitIndex = i;
+                 balancedWeight = cumulativeWeight;
+             }
+        }
+
+        const targetWeight = (balancedWeight + greedyWeight) / 2;
+
+        let bestFitIndex = -1;
+        let bestFitDifference = Infinity;
+        cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            cumulativeWeight += jobWeights[i];
+            if (cumulativeWeight <= C1) {
+                const diff = Math.abs(cumulativeWeight - targetWeight);
+                if (diff < bestFitDifference) {
+                    bestFitDifference = diff;
+                    bestFitIndex = i;
+                }
+            } else {
+                break;
+            }
+        }
+        splitIndex = bestFitIndex;
+    } else {
+        let page1Weight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            if (page1Weight + jobWeights[i] <= C1) {
+                page1Weight += jobWeights[i];
+                splitIndex = i;
+            } else {
+                break;
+            }
+        }
+    }
+    
+    if (splitIndex === -1 && jobs.length > 0) {
+        splitIndex = jobWeights[0] <= C1 ? 0 : -1;
+    }
+
+    const pages = [];
+    const pageOneJobs = jobs.slice(0, splitIndex + 1);
+    if (pageOneJobs.length > 0) pages.push(pageOneJobs);
+    
+    const remainingJobs = jobs.slice(splitIndex + 1);
+    if (remainingJobs.length > 0) {
+        let currentPageJobs: Experience[] = [];
+        let currentWeight = 0;
+        const remainingJobWeights = jobWeights.slice(splitIndex + 1);
+        
+        remainingJobs.forEach((job, index) => {
+            const weight = remainingJobWeights[index];
+            if (currentWeight + weight > CN && currentPageJobs.length > 0) {
+                pages.push(currentPageJobs);
+                currentPageJobs = [];
+                currentWeight = 0;
+            }
+            currentPageJobs.push(job);
+            currentWeight += weight;
+        });
+        if (currentPageJobs.length > 0) pages.push(currentPageJobs);
+    }
+    
+    return { experiencePages: pages.length > 0 ? pages : [[]] };
+  }, [data, layout]);
   
-  // Helper to get the original index of a job
   const getOriginalIndex = (jobToFind: Experience) => data.experience.findIndex(job => job === jobToFind);
-
   const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
   
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, sectionId: SectionId) => {
@@ -125,37 +195,23 @@ const ResumeTemplate: React.FC<TemplateProps> = (props) => {
     }
     e.dataTransfer.setData('sectionId', sectionId);
     e.dataTransfer.effectAllowed = 'move';
-    setTimeout(() => setDraggedItem(sectionId), 0); // Use timeout to allow DOM to update
+    setTimeout(() => setDraggedItem(sectionId), 0);
   };
-
-  const getDragAfterElement = (container: HTMLElement, y: number): { element: HTMLElement | null, isFirst: boolean } => {
-    const draggableElements = Array.from(container.querySelectorAll('.draggable-section:not(.dragging)')) as HTMLElement[];
-
-    if (draggableElements.length === 0) {
-        return { element: null, isFirst: true };
-    }
-    
-    const firstElementBox = draggableElements[0].getBoundingClientRect();
-    if (y < firstElementBox.top) {
-        return { element: draggableElements[0], isFirst: true };
-    }
-
-    return { element: draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > (closest.offset || Number.NEGATIVE_INFINITY)) {
-            return { offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY, element: null as HTMLElement | null }).element, isFirst: false };
-  }
 
   const handleDragOver = (e: React.DragEvent<HTMLElement>, column: 'sidebar' | 'main') => {
       if (editMode) return;
       e.preventDefault();
       const container = e.currentTarget;
-      const { element: afterElement, isFirst } = getDragAfterElement(container, e.clientY);
+      const afterElement = Array.from(container.querySelectorAll('.draggable-section:not(.dragging)') as NodeListOf<HTMLElement>)
+        .reduce((closest: { offset: number, element: HTMLElement | null }, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = e.clientY - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
       
       const targetId = afterElement ? afterElement.dataset.sectionId as SectionId : null;
       setDropTarget({ column, targetId });
@@ -185,13 +241,16 @@ const ResumeTemplate: React.FC<TemplateProps> = (props) => {
       </div>
   );
   
+  const firstPageExperience = experiencePages[0] || [];
+  const subsequentPages = experiencePages.slice(1);
+
   const renderSection = (sectionId: SectionId) => {
       const sectionMap: Record<SectionId, React.ReactNode> = {
         basics: null, // Rendered in header
         summary: data.summary ? <Section id="summary" title={t('sectionSummary')}><Editable value={data.summary} path="summary" {...editableProps} isHtml={true} className="text-gray-700 leading-relaxed prose prose-sm max-w-none dark:prose-invert" /></Section> : null,
         profiles: data.profiles && data.profiles.length > 0 ? <Section id="profiles" title={t('sectionProfiles')}>...</Section> : null, // placeholder
-        experience: page1Experience.length > 0 ? <Section id="experience" title={t('sectionExperience')}>
-            {page1Experience.map((job) => {
+        experience: firstPageExperience.length > 0 ? <Section id="experience" title={t('sectionExperience')}>
+            {firstPageExperience.map((job) => {
                 const globalJobIndex = getOriginalIndex(job);
                 return (
                 <div key={globalJobIndex} className="mb-7 last:mb-0">
@@ -228,7 +287,7 @@ const ResumeTemplate: React.FC<TemplateProps> = (props) => {
             </Section> : null,
         skills: data.skills && data.skills.length > 0 ? <Section id="skills" title={t('sectionSkills')}>
             <ul className="flex flex-wrap gap-2">
-                {data.skills.map((skill, index) => (
+                {(data.skills.slice(0, 15)).map((skill, index) => (
                 <li key={index} className="bg-secondary text-xs font-semibold px-3 py-1 rounded" style={{color: 'var(--primary-color)'}}>
                     <Editable value={skill} path={`skills[${index}]`} {...editableProps} />
                 </li>
@@ -276,7 +335,7 @@ const ResumeTemplate: React.FC<TemplateProps> = (props) => {
                     />
                 </div>
             )}
-            {layout.sidebar.map((sectionId, index) => (
+            {layout.sidebar.map((sectionId) => (
                 <React.Fragment key={sectionId}>
                     {dropTarget?.column === 'sidebar' && dropTarget?.targetId === sectionId && <div className="drop-indicator" />}
                     {renderSection(sectionId)}
@@ -290,7 +349,7 @@ const ResumeTemplate: React.FC<TemplateProps> = (props) => {
             onDrop={(e) => handleDrop(e, 'main')}
             onDragLeave={() => setDropTarget(null)}
           >
-            {layout.main.map((sectionId, index) => (
+            {layout.main.map((sectionId) => (
                  <React.Fragment key={sectionId}>
                     {dropTarget?.column === 'main' && dropTarget?.targetId === sectionId && <div className="drop-indicator" />}
                     {renderSection(sectionId)}

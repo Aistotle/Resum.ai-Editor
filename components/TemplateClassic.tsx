@@ -1,6 +1,4 @@
-
-
-import React, { useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe } from './Icons';
 import Editable from './Editable';
@@ -45,52 +43,155 @@ const Section: React.FC<{ title: string; children: React.ReactNode; id: string }
   </section>
 );
 
-// Heuristic function to estimate space taken by a job experience
-const getJobWeight = (job: Experience): number => {
-    const BASE_WEIGHT = 20; // For metadata
-    const CHAR_WEIGHT = 0.1; // Weight per character in description
-    const BULLET_WEIGHT = 5; // Weight per bullet point
-    
-    const descriptionLength = job.description.join(' ').length;
-    const bulletCount = job.description.length;
-
-    return BASE_WEIGHT + (descriptionLength * CHAR_WEIGHT) + (bulletCount * BULLET_WEIGHT);
+// --- Content Weight Calculation ---
+const getWeight = {
+    job: (job: Experience): number => {
+        const descriptionLength = job.description.join(' ').length;
+        return 40 + (descriptionLength * 0.18) + (job.description.length * 8);
+    },
+    summary: (text: string) => text ? 50 + text.length * 0.25 : 0,
+    skills: (items: string[]) => items && items.length > 0 ? 50 + items.join('').length * 0.8 : 0,
+    education: (items: any[]) => items && items.length > 0 ? 50 + items.length * 40 : 0,
 };
 
-
 const TemplateClassic: React.FC<TemplateProps> = (props) => {
-  const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
-  // Constants for pagination logic. Tuned for this single-column template.
-  const SUBSEQUENT_PAGE_MAX_WEIGHT = 520;
-
-  const experiencePages: Experience[][] = [];
-  if (data.experience.length > 0) {
-      let currentPage: Experience[] = [];
-      let currentWeight = 0;
-      
-      // This template puts all non-experience content on page 1.
-      // So we just need to paginate the experience section across subsequent pages.
-      
-      data.experience.forEach(job => {
-          const jobWeight = getJobWeight(job);
-          if (currentWeight + jobWeight > SUBSEQUENT_PAGE_MAX_WEIGHT && currentPage.length > 0) {
-              experiencePages.push(currentPage);
-              currentPage = [];
-              currentWeight = 0;
-          }
-          currentPage.push(job);
-          currentWeight += jobWeight;
-      });
-      experiencePages.push(currentPage);
-  }
+  const { data, design, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
   
-  useEffect(() => {
-    // For this template, overflow happens if there's more than ONE page of experience.
-    onOverflowChange(experiencePages.length > 1);
-  }, [experiencePages.length, onOverflowChange]);
+  const experiencePages = useMemo(() => {
+    const jobs = data.experience || [];
+    if (!jobs.length) return [[]];
 
+    const PAGE_CAPACITY = 1000;
+    const HEADER_COST = 200;
+    let C1 = PAGE_CAPACITY - HEADER_COST;
+    C1 -= getWeight.summary(data.summary);
+    C1 -= getWeight.skills(data.skills);
+    C1 -= getWeight.education(data.education);
+    const CN = PAGE_CAPACITY - 100;
+    
+    const jobWeights = jobs.map(job => getWeight.job(job));
+    const W_total = jobWeights.reduce((sum, weight) => sum + weight, 0);
+
+    if (W_total <= C1) {
+        return [jobs];
+    }
+    
+    let splitIndex = -1;
+
+    if (W_total <= C1 + CN) {
+        let greedyWeight = 0;
+        let greedySplitIndex = -1;
+        let cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            if (cumulativeWeight + jobWeights[i] <= C1) {
+                cumulativeWeight += jobWeights[i];
+                greedySplitIndex = i;
+                greedyWeight = cumulativeWeight;
+            } else {
+                break;
+            }
+        }
+        
+        let balancedWeight = 0;
+        let balancedSplitIndex = -1;
+        let minDiff = Infinity;
+        cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length - 1; i++) {
+             cumulativeWeight += jobWeights[i];
+             const diff = Math.abs(cumulativeWeight - W_total / 2);
+             if (diff < minDiff && cumulativeWeight <= C1) {
+                 minDiff = diff;
+                 balancedSplitIndex = i;
+                 balancedWeight = cumulativeWeight;
+             }
+        }
+
+        const targetWeight = (balancedWeight + greedyWeight) / 2;
+
+        let bestFitIndex = -1;
+        let bestFitDifference = Infinity;
+        cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            cumulativeWeight += jobWeights[i];
+            if (cumulativeWeight <= C1) {
+                const diff = Math.abs(cumulativeWeight - targetWeight);
+                if (diff < bestFitDifference) {
+                    bestFitDifference = diff;
+                    bestFitIndex = i;
+                }
+            } else {
+                break;
+            }
+        }
+        splitIndex = bestFitIndex;
+    } else {
+        let page1Weight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            if (page1Weight + jobWeights[i] <= C1) {
+                page1Weight += jobWeights[i];
+                splitIndex = i;
+            } else {
+                break;
+            }
+        }
+    }
+
+    if (splitIndex === -1 && jobs.length > 0) {
+        splitIndex = jobWeights[0] <= C1 ? 0 : -1;
+    }
+
+    const pages = [];
+    const pageOneJobs = jobs.slice(0, splitIndex + 1);
+    if(pageOneJobs.length > 0) pages.push(pageOneJobs);
+
+    const remainingJobs = jobs.slice(splitIndex + 1);
+
+    if (remainingJobs.length > 0) {
+        let currentPageJobs: Experience[] = [];
+        let currentWeight = 0;
+        const remainingJobWeights = jobWeights.slice(splitIndex + 1);
+
+        remainingJobs.forEach((job, index) => {
+            const weight = remainingJobWeights[index];
+            if (currentWeight + weight > CN && currentPageJobs.length > 0) {
+                pages.push(currentPageJobs);
+                currentPageJobs = [];
+                currentWeight = 0;
+            }
+            currentPageJobs.push(job);
+            currentWeight += weight;
+        });
+        if (currentPageJobs.length > 0) pages.push(currentPageJobs);
+    }
+
+    return pages.length > 0 ? pages : [[]];
+  }, [data]);
+  
   const getOriginalIndex = (jobToFind: Experience) => data.experience.findIndex(job => job === jobToFind);
   const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
+  
+  const firstPageExperience = experiencePages[0] || [];
+  const subsequentPages = experiencePages.slice(1);
+
+  const renderExperienceChunk = (chunk: Experience[]) => chunk.map((job) => {
+    const globalJobIndex = getOriginalIndex(job);
+    return (
+        <div key={globalJobIndex} className="mb-7 last:mb-0">
+            <div className="flex justify-between items-baseline mb-1">
+            <h4 className="text-lg font-bold text-neutral">
+                <Editable value={job.role} path={`experience[${globalJobIndex}].role`} as="span" {...editableProps} />
+                <span className="font-normal"> at </span>
+                <Editable value={job.company} path={`experience[${globalJobIndex}].company`} as="span" {...editableProps} />
+            </h4>
+            <Editable value={job.period} path={`experience[${globalJobIndex}].period`} {...editableProps} className="text-sm font-medium text-gray-600" />
+            </div>
+            <Editable value={job.location} path={`experience[${globalJobIndex}].location`} {...editableProps} className="text-sm text-gray-500 mb-2" />
+            <ul className="list-disc list-inside text-gray-700 space-y-1.5 pl-2 leading-normal">
+            {job.description.map((desc, i) => <li key={i}><Editable value={desc} path={`experience[${globalJobIndex}].description[${i}]`} {...editableProps} /></li>)}
+            </ul>
+        </div>
+    );
+  });
 
   return (
     <div className="transition-all duration-300">
@@ -124,7 +225,7 @@ const TemplateClassic: React.FC<TemplateProps> = (props) => {
 
             {data.skills?.length > 0 && <Section id="skills" title={t('sectionSkills')}>
                  <ul className="flex flex-wrap gap-x-4 gap-y-2 justify-center">
-                    {data.skills.map((skill, index) => (
+                    {(data.skills.slice(0, 15)).map((skill, index) => (
                       <li key={index} className="text-neutral text-md"><Editable value={skill} path={`skills[${index}]`} {...editableProps} /></li>
                     ))}
                 </ul>
@@ -143,31 +244,17 @@ const TemplateClassic: React.FC<TemplateProps> = (props) => {
                 </div>
               ))}
             </Section>}
+
+            {firstPageExperience.length > 0 && <Section id="experience" title={t('sectionExperience')}>
+                {renderExperienceChunk(firstPageExperience)}
+            </Section>}
         </main>
       </Page>
       
-      {experiencePages.map((chunk, pageIndex) => (
+      {subsequentPages.map((chunk, pageIndex) => (
         <Page key={`exp-page-${pageIndex}`}>
-            <Section data-section-id="experience" id={pageIndex === 0 ? "experience" : `experience-p${pageIndex}`} title={pageIndex === 0 ? t('sectionExperience') : `${t('sectionExperience')} (${t('experienceContinued')})`}>
-              {chunk.map((job) => {
-                const globalJobIndex = getOriginalIndex(job);
-                return (
-                <div key={globalJobIndex} className="mb-7 last:mb-0">
-                  <div className="flex justify-between items-baseline mb-1">
-                    <h4 className="text-lg font-bold text-neutral">
-                        <Editable value={job.role} path={`experience[${globalJobIndex}].role`} as="span" {...editableProps} />
-                        <span className="font-normal"> at </span>
-                        <Editable value={job.company} path={`experience[${globalJobIndex}].company`} as="span" {...editableProps} />
-                    </h4>
-                    <Editable value={job.period} path={`experience[${globalJobIndex}].period`} {...editableProps} className="text-sm font-medium text-gray-600" />
-                  </div>
-                  <Editable value={job.location} path={`experience[${globalJobIndex}].location`} {...editableProps} className="text-sm text-gray-500 mb-2" />
-                  <ul className="list-disc list-inside text-gray-700 space-y-1.5 pl-2 leading-normal">
-                    {job.description.map((desc, i) => <li key={i}><Editable value={desc} path={`experience[${globalJobIndex}].description[${i}]`} {...editableProps} /></li>)}
-                  </ul>
-                </div>
-                )
-              })}
+            <Section data-section-id="experience" id={`experience-p${pageIndex}`} title={`${t('sectionExperience')} (${t('experienceContinued')})`}>
+              {renderExperienceChunk(chunk)}
             </Section>
         </Page>
       ))}

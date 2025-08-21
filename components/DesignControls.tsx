@@ -93,11 +93,6 @@ const DesignControls: React.FC<DesignControlsProps> = ({ resumeData, designOptio
             onProfilePictureChange(e.target.files[0]);
         }
     };
-
-    const handleFontChange = (fontFamily: string) => {
-        onDesignChange('bodyFont', fontFamily);
-        onDesignChange('headingFont', fontFamily); // Sync heading and body for simplicity
-    };
     
     return (
         <div className="p-4 h-full flex flex-col">
@@ -174,29 +169,13 @@ const DesignControls: React.FC<DesignControlsProps> = ({ resumeData, designOptio
                         <h3 className="font-bold text-lg text-secondary-foreground">{t('typography')}</h3>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                        {fonts.map(font => (
-                            <button key={font.name} onClick={() => handleFontChange(font.family)}
-                                className={`p-3 border rounded-md text-center text-sm transition-colors ${designOptions.bodyFont === font.family ? 'border-primary bg-primary/5 text-primary font-semibold ring-2 ring-primary' : 'bg-secondary border-border hover:border-muted-foreground/50'}`}
-                                style={{ fontFamily: font.family }}
-                            >
-                                {font.name}
-                            </button>
-                        ))}
-                    </div>
-
                     <div className="space-y-3 mb-6">
-                        <SelectControl label="Font Family" value={designOptions.bodyFont} onChange={(e) => handleFontChange(e.target.value)}>
+                        <SelectControl label={t('headingFont')} value={designOptions.headingFont} onChange={(e) => onDesignChange('headingFont', e.target.value)}>
                             {fonts.map(font => <option key={font.name} value={font.family} style={{ fontFamily: font.family }}>{font.name}</option>)}
                         </SelectControl>
-                        <div className="grid grid-cols-2 gap-3">
-                            <SelectControl label="Font Subset" value="latin" onChange={() => {}}>
-                                <option value="latin">latin</option>
-                            </SelectControl>
-                            <SelectControl label="Font Variants" value="regular" onChange={() => {}}>
-                                <option value="regular">regular, italic, 600</option>
-                            </SelectControl>
-                        </div>
+                        <SelectControl label={t('bodyFont')} value={designOptions.bodyFont} onChange={(e) => onDesignChange('bodyFont', e.target.value)}>
+                            {fonts.map(font => <option key={font.name} value={font.family} style={{ fontFamily: font.family }}>{font.name}</option>)}
+                        </SelectControl>
                     </div>
 
                     <div className="space-y-4 mb-6">

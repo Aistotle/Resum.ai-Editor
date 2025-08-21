@@ -1,6 +1,4 @@
-
-
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe, MapPin } from './Icons';
 import Editable from './Editable';
@@ -49,70 +47,134 @@ const Page: React.FC<{children: React.ReactNode}> = ({ children }) => (
     </div>
 );
 
-// Pagination heuristic
-const getJobWeight = (job: Experience): number => {
-    const descriptionLength = job.description.join(' ').length;
-    return 30 + (descriptionLength * 0.11) + (job.description.length * 7);
+// --- Content Weight Calculation ---
+const getWeight = {
+    job: (job: Experience): number => {
+        const descriptionLength = job.description.join(' ').length;
+        return 40 + (descriptionLength * 0.18) + (job.description.length * 8);
+    },
+    summary: (text: string) => text ? 50 + text.length * 0.25 : 0,
+    sidebarSection: (items: any[]) => items ? 40 + items.length * 20 : 0,
+    skills: (items: string[]) => items ? 40 + items.join('').length * 0.8 : 0,
 };
 
 const TemplateStructured: React.FC<TemplateProps> = (props) => {
-  const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
+  const { data, design, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
   const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
   const getOriginalIndex = (jobToFind: Experience) => data.experience.findIndex(job => job === jobToFind);
 
-  // --- Pagination Logic for 2-Column Layout ---
+  // --- Dynamic Pagination Logic ---
   const experiencePages = useMemo(() => {
-    const pages: Experience[][] = [];
-    if (!data.experience || data.experience.length === 0) return pages;
+    const jobs = data.experience || [];
+    if (!jobs.length) return [];
 
-    const PAGE_1_MAIN_COLUMN_MAX_WEIGHT = 350;
-    const SUBSEQUENT_PAGE_MAX_WEIGHT = 650;
+    const PAGE_CAPACITY = 1000;
+    const HEADER_COST = 150;
+    const CN = PAGE_CAPACITY - 100;
 
-    let page1Items: Experience[] = [];
-    let remainingItems: Experience[] = [];
-    
-    let currentWeight = 0;
-    let page1Done = false;
-    
-    data.experience.forEach(job => {
-        if(page1Done) {
-            remainingItems.push(job);
-            return;
-        }
-        const jobWeight = getJobWeight(job);
-        if (currentWeight + jobWeight > PAGE_1_MAIN_COLUMN_MAX_WEIGHT && page1Items.length > 0) {
-            page1Done = true;
-            remainingItems.push(job);
-        } else {
-            page1Items.push(job);
-            currentWeight += jobWeight;
-        }
-    });
+    const sidebarCost = getWeight.sidebarSection(data.education) + getWeight.skills(data.skills) + 150;
+    const mainStaticCost = HEADER_COST + getWeight.summary(data.summary);
+    const C1 = PAGE_CAPACITY - Math.max(sidebarCost, mainStaticCost);
 
-    pages.push(page1Items);
+    const jobWeights = jobs.map(job => getWeight.job(job));
+    const W_total = jobWeights.reduce((sum, weight) => sum + weight, 0);
 
-    if (remainingItems.length > 0) {
-        let nextPage: Experience[] = [];
-        currentWeight = 0;
-        remainingItems.forEach(job => {
-            const jobWeight = getJobWeight(job);
-            if (currentWeight + jobWeight > SUBSEQUENT_PAGE_MAX_WEIGHT && nextPage.length > 0) {
-                pages.push(nextPage);
-                nextPage = [];
-                currentWeight = 0;
+    if (W_total <= C1) {
+        return [jobs];
+    }
+
+    let splitIndex = -1;
+
+    if (W_total <= C1 + CN) {
+        let greedyWeight = 0;
+        let greedySplitIndex = -1;
+        let cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            if (cumulativeWeight + jobWeights[i] <= C1) {
+                cumulativeWeight += jobWeights[i];
+                greedySplitIndex = i;
+                greedyWeight = cumulativeWeight;
+            } else {
+                break;
             }
-            nextPage.push(job);
-            currentWeight += jobWeight;
-        });
-        pages.push(nextPage);
+        }
+        
+        let balancedWeight = 0;
+        let balancedSplitIndex = -1;
+        let minDiff = Infinity;
+        cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length - 1; i++) {
+             cumulativeWeight += jobWeights[i];
+             const diff = Math.abs(cumulativeWeight - W_total / 2);
+             if (diff < minDiff && cumulativeWeight <= C1) {
+                 minDiff = diff;
+                 balancedSplitIndex = i;
+                 balancedWeight = cumulativeWeight;
+             }
+        }
+
+        const targetWeight = (balancedWeight + greedyWeight) / 2;
+
+        let bestFitIndex = -1;
+        let bestFitDifference = Infinity;
+        cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            cumulativeWeight += jobWeights[i];
+            if (cumulativeWeight <= C1) {
+                const diff = Math.abs(cumulativeWeight - targetWeight);
+                if (diff < bestFitDifference) {
+                    bestFitDifference = diff;
+                    bestFitIndex = i;
+                }
+            } else {
+                break;
+            }
+        }
+        splitIndex = bestFitIndex;
+    } else {
+        let page1Weight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            if (page1Weight + jobWeights[i] <= C1) {
+                page1Weight += jobWeights[i];
+                splitIndex = i;
+            } else {
+                break;
+            }
+        }
+    }
+
+    if (splitIndex === -1 && jobs.length > 0) {
+        splitIndex = jobWeights[0] <= C1 ? 0 : -1;
     }
     
-    return pages;
-  }, [data.experience]);
+    const pages = [];
+    const pageOneJobs = jobs.slice(0, splitIndex + 1);
+    if(pageOneJobs.length > 0) pages.push(pageOneJobs);
 
-  useEffect(() => {
-    onOverflowChange(experiencePages.length > 2);
-  }, [experiencePages.length, onOverflowChange]);
+    const remainingJobs = jobs.slice(splitIndex + 1);
+    if (remainingJobs.length > 0) {
+        let currentPageJobs: Experience[] = [];
+        let currentWeight = 0;
+        const remainingJobWeights = jobWeights.slice(splitIndex + 1);
+
+        remainingJobs.forEach((job, index) => {
+            const weight = remainingJobWeights[index];
+            if (currentWeight + weight > CN && currentPageJobs.length > 0) {
+                pages.push(currentPageJobs);
+                currentPageJobs = [];
+                currentWeight = 0;
+            }
+            currentPageJobs.push(job);
+            currentWeight += weight;
+        });
+        if (currentPageJobs.length > 0) pages.push(currentPageJobs);
+    }
+
+    return pages.length > 0 ? pages : [[]];
+  }, [data]);
+
+  const firstPageExperience = experiencePages[0] || [];
+  const subsequentPages = experiencePages.slice(1);
 
   const SidebarSection: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
       <section className="mb-6">
@@ -168,7 +230,7 @@ const TemplateStructured: React.FC<TemplateProps> = (props) => {
         </SidebarSection>
         {data.skills?.length > 0 && <SidebarSection title={t('sectionSkills')}>
             <ul className="flex flex-wrap gap-2">
-                {data.skills.map((skill, index) => (
+                {(data.skills.slice(0, 15)).map((skill, index) => (
                 <li key={index} className="bg-gray-500/20 dark:bg-gray-400/20 text-xs font-semibold px-2.5 py-1 rounded-md">
                     <Editable value={skill} path={`skills[${index}]`} {...editableProps} />
                 </li>
@@ -203,15 +265,15 @@ const TemplateStructured: React.FC<TemplateProps> = (props) => {
                 {data.summary && <MainSection title={t('sectionSummary')}>
                     <Editable value={data.summary} path="summary" {...editableProps} isHtml={true} className="prose prose-sm max-w-none dark:prose-invert" />
                 </MainSection>}
-                {experiencePages[0] && experiencePages[0].length > 0 && <MainSection title={t('sectionExperience')}>
-                    {renderExperienceChunk(experiencePages[0])}
+                {firstPageExperience.length > 0 && <MainSection title={t('sectionExperience')}>
+                    {renderExperienceChunk(firstPageExperience)}
                 </MainSection>}
             </main>
         </div>
       </Page>
       
       {/* --- Subsequent Pages --- */}
-      {experiencePages.slice(1).map((chunk, pageIndex) => (
+      {subsequentPages.map((chunk, pageIndex) => (
         <Page key={`exp-page-${pageIndex}`}>
             <div className="p-8 h-full overflow-hidden" style={{fontFamily: 'var(--body-font)'}}>
                 <MainSection title={`${t('sectionExperience')} (${t('experienceContinued')})`}>

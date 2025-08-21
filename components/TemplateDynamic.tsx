@@ -1,6 +1,8 @@
 
 
-import React, { CSSProperties, useEffect } from 'react';
+
+
+import React, { useMemo } from 'react';
 import { ResumeData, Experience, TemplateConfig, LayoutType, SectionName, DesignOptions, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe } from './Icons';
 import Editable from './Editable';
@@ -27,33 +29,41 @@ interface DynamicTemplateWithConfig extends TemplateProps {
 }
 
 const TemplateDynamic: React.FC<DynamicTemplateWithConfig> = (props) => {
-    const { data, design, onOverflowChange, config, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
+    const { data, design, config, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
     const { layout, colors, typography, sectionStyles, density } = config;
     const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
+    const getOriginalIndex = (jobToFind: Experience) => data.experience.findIndex(job => job === jobToFind);
 
     // --- Pagination Logic ---
-    const PAGE_MAX_WEIGHT = density === 'compact' ? 620 : (density === 'spacious' ? 460 : 520);
-    const experiencePages: Experience[][] = [];
+    const experiencePages = useMemo(() => {
+        const jobs = data.experience || [];
+        if (!jobs.length) return [];
 
-    if (data.experience.length > 0) {
-        let currentPage: Experience[] = [];
+        const CN = density === 'compact' ? 620 : (density === 'spacious' ? 460 : 520);
+        const jobWeights = jobs.map(job => getDynamicJobWeight(job, density));
+        
+        const pages: Experience[][] = [];
+        let currentPageJobs: Experience[] = [];
         let currentWeight = 0;
-        data.experience.forEach(job => {
-            const jobWeight = getDynamicJobWeight(job, density);
-            if(currentWeight + jobWeight > PAGE_MAX_WEIGHT && currentPage.length > 0) {
-                experiencePages.push(currentPage);
-                currentPage = [];
+
+        jobs.forEach((job, index) => {
+            const weight = jobWeights[index];
+            if (currentWeight + weight > CN && currentPageJobs.length > 0) {
+                pages.push(currentPageJobs);
+                currentPageJobs = [];
                 currentWeight = 0;
             }
-            currentPage.push(job);
-            currentWeight += jobWeight;
+            currentPageJobs.push(job);
+            currentWeight += weight;
         });
-        experiencePages.push(currentPage);
-    }
 
-    useEffect(() => { onOverflowChange(experiencePages.length > 1); }, [experiencePages.length, onOverflowChange]);
-    const getOriginalIndex = (jobToFind: Experience) => data.experience.findIndex(job => job === jobToFind);
-    // --- End Pagination ---
+        if (currentPageJobs.length > 0) {
+            pages.push(currentPageJobs);
+        }
+
+        return pages.length > 0 ? pages : [[]];
+    }, [data.experience, density]);
+
 
     const ProfilePicture = () => data.profilePicture ? (
         <div className="mb-6 flex justify-center">
@@ -98,7 +108,7 @@ const TemplateDynamic: React.FC<DynamicTemplateWithConfig> = (props) => {
           summary: <Editable value={data.summary} path="summary" {...editableProps} isHtml={true} className="prose prose-sm max-w-none dark:prose-invert" style={{ ...typography.body, color: typography.body.color || colors.text }} />,
           skills: (
               <ul className="flex flex-wrap gap-2">
-                  {data.skills.map((skill, index) => (
+                  {(data.skills.slice(0, 15)).map((skill, index) => (
                       <li key={index} className="text-xs font-semibold px-3 py-1 rounded" style={{backgroundColor: `${colors.primary}20`, color: colors.primary}}>
                           <Editable value={skill} path={`skills[${index}]`} {...editableProps} />
                       </li>

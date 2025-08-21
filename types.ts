@@ -18,6 +18,7 @@ export enum TemplateIdentifier {
   MODERN_SPLIT = 'MODERN_SPLIT',
   PROFESSIONAL = 'PROFESSIONAL',
   STRUCTURED = 'STRUCTURED',
+  MINIMALIST = 'MINIMALIST',
   DYNAMIC = 'DYNAMIC', // Represents a dynamically generated template
 }
 
@@ -194,7 +195,6 @@ export interface TemplateConfig {
 export interface TemplateProps {
   data: ResumeData;
   design: DesignOptions;
-  onOverflowChange: (overflow: boolean) => void;
   t: (key: string) => string;
   editMode: boolean;
   onUpdate: (path: string, value: any) => void;

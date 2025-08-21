@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TemplateIdentifier, TemplateConfig } from '../types';
 import { LayoutGrid } from './Icons';
 import TemplateUploadModal from './TemplateUploadModal';
-import { ModernPreview, ClassicPreview, BlueHeroPreview, ModernSplitPreview, ProfessionalPreview, StructuredPreview, DynamicPreview } from './TemplatePreviews';
+import { ModernPreview, ClassicPreview, BlueHeroPreview, ModernSplitPreview, ProfessionalPreview, StructuredPreview, MinimalistPreview, DynamicPreview } from './TemplatePreviews';
 
 interface TemplateSwitcherProps {
     selectedTemplate: TemplateIdentifier | TemplateConfig;
@@ -91,6 +91,12 @@ const TemplateSwitcher: React.FC<TemplateSwitcherProps> = ({ selectedTemplate, o
                         preview={<StructuredPreview />}
                         isSelected={getIsSelected(TemplateIdentifier.STRUCTURED)}
                         onClick={() => onTemplateChange(TemplateIdentifier.STRUCTURED)}
+                    />
+                     <TemplateOption 
+                        label={t('minimalist')}
+                        preview={<MinimalistPreview />}
+                        isSelected={getIsSelected(TemplateIdentifier.MINIMALIST)}
+                        onClick={() => onTemplateChange(TemplateIdentifier.MINIMALIST)}
                     />
                 </div>
                 

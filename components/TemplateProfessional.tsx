@@ -1,6 +1,4 @@
-
-
-import React, { useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { ResumeData, DesignOptions, Experience, TemplateProps } from '../types';
 import { Mail, Phone, Linkedin, Globe, MapPin } from './Icons';
 import Editable from './Editable';
@@ -41,44 +39,129 @@ const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     </div>
 );
 
-const getJobWeight = (job: Experience): number => {
-    const BASE_WEIGHT = 20;
-    const CHAR_WEIGHT = 0.1;
-    const BULLET_WEIGHT = 5;
-    const descriptionLength = job.description.join(' ').length;
-    const bulletCount = job.description.length;
-    return BASE_WEIGHT + (descriptionLength * CHAR_WEIGHT) + (bulletCount * BULLET_WEIGHT);
+const getWeight = {
+    job: (job: Experience): number => {
+        const descriptionLength = job.description.join(' ').length;
+        return 40 + (descriptionLength * 0.18) + (job.description.length * 8);
+    },
+    summary: (text: string) => text ? 50 + text.length * 0.25 : 0,
 };
 
-const TemplateProfessional: React.FC<TemplateProps> = (props) => {
-  const { data, design, onOverflowChange, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
-  const PAGE_1_MAX_WEIGHT = 260;
-  const SUBSEQUENT_PAGE_MAX_WEIGHT = 550;
-  
-  const experiencePages: Experience[][] = [];
-  if (data.experience.length > 0) {
-      let currentPage: Experience[] = [];
-      let currentWeight = 0;
-      data.experience.forEach(job => {
-          const jobWeight = getJobWeight(job);
-          const limit = experiencePages.length === 0 ? PAGE_1_MAX_WEIGHT : SUBSEQUENT_PAGE_MAX_WEIGHT;
-          if (currentWeight + jobWeight > limit && currentPage.length > 0) {
-              experiencePages.push(currentPage);
-              currentPage = [];
-              currentWeight = 0;
-          }
-          currentPage.push(job);
-          currentWeight += jobWeight;
-      });
-      experiencePages.push(currentPage);
-  }
 
-  useEffect(() => {
-    onOverflowChange(experiencePages.length > 2);
-  }, [experiencePages.length, onOverflowChange]);
+const TemplateProfessional: React.FC<TemplateProps> = (props) => {
+  const { data, design, t, editMode, onUpdate, onFocus, editingPath, onAITooltipOpen } = props;
+
+  const experiencePages = useMemo(() => {
+    const jobs = data.experience || [];
+    if (!jobs.length) return [];
+
+    const PAGE_CAPACITY = 980;
+    const HEADER_COST = 180;
+    const CN = 1000;
+    const C1 = PAGE_CAPACITY - (HEADER_COST + getWeight.summary(data.summary));
+    
+    const jobWeights = jobs.map(job => getWeight.job(job));
+    const W_total = jobWeights.reduce((sum, weight) => sum + weight, 0);
+
+    if (W_total <= C1) {
+        return [jobs];
+    }
+    
+    let splitIndex = -1;
+
+    if (W_total <= C1 + CN) {
+        let greedyWeight = 0;
+        let greedySplitIndex = -1;
+        let cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            if (cumulativeWeight + jobWeights[i] <= C1) {
+                cumulativeWeight += jobWeights[i];
+                greedySplitIndex = i;
+                greedyWeight = cumulativeWeight;
+            } else {
+                break;
+            }
+        }
+        
+        let balancedWeight = 0;
+        let balancedSplitIndex = -1;
+        let minDiff = Infinity;
+        cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length - 1; i++) {
+             cumulativeWeight += jobWeights[i];
+             const diff = Math.abs(cumulativeWeight - W_total / 2);
+             if (diff < minDiff && cumulativeWeight <= C1) {
+                 minDiff = diff;
+                 balancedSplitIndex = i;
+                 balancedWeight = cumulativeWeight;
+             }
+        }
+
+        const targetWeight = (balancedWeight + greedyWeight) / 2;
+
+        let bestFitIndex = -1;
+        let bestFitDifference = Infinity;
+        cumulativeWeight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            cumulativeWeight += jobWeights[i];
+            if (cumulativeWeight <= C1) {
+                const diff = Math.abs(cumulativeWeight - targetWeight);
+                if (diff < bestFitDifference) {
+                    bestFitDifference = diff;
+                    bestFitIndex = i;
+                }
+            } else {
+                break;
+            }
+        }
+        splitIndex = bestFitIndex;
+    } else {
+        let page1Weight = 0;
+        for (let i = 0; i < jobs.length; i++) {
+            if (page1Weight + jobWeights[i] <= C1) {
+                page1Weight += jobWeights[i];
+                splitIndex = i;
+            } else {
+                break;
+            }
+        }
+    }
+    
+    if (splitIndex === -1 && jobs.length > 0) {
+        splitIndex = jobWeights[0] <= C1 ? 0 : -1;
+    }
+
+    const pages = [];
+    const pageOneJobs = jobs.slice(0, splitIndex + 1);
+    if(pageOneJobs.length > 0) pages.push(pageOneJobs);
+
+    const remainingJobs = jobs.slice(splitIndex + 1);
+    if (remainingJobs.length > 0) {
+        let currentPageJobs: Experience[] = [];
+        let currentWeight = 0;
+        const remainingJobWeights = jobWeights.slice(splitIndex + 1);
+
+        remainingJobs.forEach((job, index) => {
+            const weight = remainingJobWeights[index];
+            if (currentWeight + weight > CN && currentPageJobs.length > 0) {
+                pages.push(currentPageJobs);
+                currentPageJobs = [];
+                currentWeight = 0;
+            }
+            currentPageJobs.push(job);
+            currentWeight += weight;
+        });
+        if (currentPageJobs.length > 0) pages.push(currentPageJobs);
+    }
+
+    return pages.length > 0 ? pages : [[]];
+  }, [data]);
 
   const getOriginalIndex = (jobToFind: Experience) => data.experience.findIndex(job => job === jobToFind);
   const editableProps = { editMode, onUpdate, onFocus, editingPath, onAITooltipOpen };
+  
+  const firstPageExperience = experiencePages[0] || [];
+  const subsequentPages = experiencePages.slice(1);
 
   const SidebarSection: React.FC<{ title: string, children: React.ReactNode, id: string }> = ({ title, children, id }) => (
       <section id={id} data-section-id={id} className="mb-8 scroll-mt-24">
@@ -116,8 +199,8 @@ const TemplateProfessional: React.FC<TemplateProps> = (props) => {
     <div className="transition-all duration-300">
       <StyleInjector design={design} />
       <Page>
-        <div className="grid grid-cols-12 min-h-[11.69in]">
-          <aside className="col-span-4 p-6" style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}>
+        <div className="grid grid-cols-12 h-full">
+          <aside className="col-span-4 p-6 h-full" style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}>
             {data.profilePicture && (
               <div className="mb-8 flex justify-center">
                 <img src={data.profilePicture} alt={data.name} className={`w-32 h-32 object-cover border-4 border-white/20 shadow-lg ${design.profilePictureShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`} />
@@ -148,7 +231,7 @@ const TemplateProfessional: React.FC<TemplateProps> = (props) => {
             {data.skills?.length > 0 && (
                 <SidebarSection id="skills" title={t('sectionSkills')}>
                     <ul className="flex flex-wrap gap-2">
-                        {data.skills.map((skill, index) => (
+                        {(data.skills.slice(0, 15)).map((skill, index) => (
                         <li key={index} className="bg-gray-600 text-gray-100 text-xs font-semibold px-3 py-1 rounded-full">
                             <Editable value={skill} path={`skills[${index}]`} {...editableProps} />
                         </li>
@@ -158,7 +241,7 @@ const TemplateProfessional: React.FC<TemplateProps> = (props) => {
             )}
           </aside>
 
-          <main className="col-span-8 py-8 pr-8 pl-6">
+          <main className="col-span-8 py-8 pr-8 pl-6 h-full overflow-hidden">
             <header data-section-id="basics" className="mb-10 scroll-mt-24">
               <Editable as="h1" value={data.name} path="name" {...editableProps} className="text-5xl font-extrabold text-gray-900 tracking-tight" style={{fontFamily: 'var(--heading-font)'}} />
               <Editable as="h2" value={data.title} path="title" {...editableProps} className="text-2xl font-light mt-1" style={{color: 'var(--primary-color)'}}/>
@@ -168,18 +251,18 @@ const TemplateProfessional: React.FC<TemplateProps> = (props) => {
               <Editable value={data.summary} path="summary" {...editableProps} isHtml={true} className="text-gray-700 leading-relaxed prose prose-sm max-w-none dark:prose-invert" />
             </MainSection>}
 
-            {experiencePages[0] && experiencePages[0].length > 0 && (
+            {firstPageExperience.length > 0 && (
               <MainSection id="experience" title={t('sectionExperience')}>
-                {renderExperienceChunk(experiencePages[0])}
+                {renderExperienceChunk(firstPageExperience)}
               </MainSection>
             )}
           </main>
         </div>
       </Page>
 
-      {experiencePages.slice(1).map((chunk, pageIndex) => (
+      {subsequentPages.map((chunk, pageIndex) => (
           <Page key={`page-${pageIndex+2}`}>
-              <div className="py-10 px-10">
+              <div className="py-10 px-10 h-full overflow-hidden">
                   <MainSection data-section-id="experience" id={`experience-p${pageIndex+2}`} title={`${t('sectionExperience')} (${t('experienceContinued')})`}>
                       {renderExperienceChunk(chunk)}
                   </MainSection>

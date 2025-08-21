@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppState, ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, ModalState, SectionId, EditorView, CoverLetterData } from './types';
 import { improveResumeWithAI, editResumeWithAI, analyzeResumeTemplate, editSelectedTextWithAI, generateCoverLetterWithAI, editCoverLetterWithAI, getResumeFeedbackWithAI, getConsultantFollowUpWithAI, NetworkError, APIError, ContentError } from './services/geminiService';
@@ -25,7 +26,7 @@ const defaultDesignOptions: DesignOptions = {
   headingFont: '"IBM Plex Serif", serif',
   bodyFont: '"IBM Plex Serif", serif',
   profilePictureShape: 'circle',
-  fontSize: 14,
+  fontSize: 12,
   lineHeight: 1.5,
   hideIcons: false,
   underlineLinks: true,
@@ -52,7 +53,6 @@ const App: React.FC = () => {
   const [designOptions, setDesignOptions] = useState<DesignOptions>(defaultDesignOptions);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
-  const [hasOverflow, setHasOverflow] = useState<boolean>(false);
   const [customTemplates, setCustomTemplates] = useState<TemplateConfig[]>([]);
   const [isAnalyzingTemplate, setIsAnalyzingTemplate] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>('da');
@@ -118,7 +118,6 @@ const App: React.FC = () => {
     setIsConsultantChatProcessing(false);
     setSelectedTemplate(TemplateIdentifier.MODERN);
     setDesignOptions(defaultDesignOptions);
-    setHasOverflow(false);
     setSelectionTooltip({ visible: false });
     setEditingPath(null);
     setZoomLevel(100);
@@ -676,8 +675,6 @@ const App: React.FC = () => {
             onOpenModal={handleOpenModal}
             onRemoveItem={handleRemoveItem}
             onReorderItem={handleReorderItem}
-            hasOverflow={hasOverflow}
-            onOverflowChange={setHasOverflow}
             customTemplates={customTemplates}
             onAnalyzeTemplate={handleAnalyzeTemplate}
             isAnalyzingTemplate={isAnalyzingTemplate}

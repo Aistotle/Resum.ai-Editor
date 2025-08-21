@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import { ResumeData, ConversationMessage, TemplateIdentifier, DesignOptions, TemplateConfig, Language, SelectionTooltipState, SectionId, EditorView, CoverLetterData } from '../types';
 import ResumeTemplate from './ResumeTemplate';
@@ -7,9 +8,9 @@ import TemplateBlueHero from './TemplateBlueHero';
 import TemplateModernSplit from './TemplateModernSplit';
 import TemplateProfessional from './TemplateProfessional';
 import TemplateStructured from './TemplateStructured';
+import TemplateMinimalist from './TemplateMinimalist';
 import TemplateDynamic from './TemplateDynamic';
 import ControlPanel from './ControlPanel';
-import PaginationWarning from './PaginationWarning';
 import SelectionTooltip from './SelectionTooltip';
 import ZoomControls from './ZoomControls';
 import EditorSidebar from './EditorSidebar';
@@ -29,8 +30,6 @@ interface ResumeEditorProps {
     onOpenModal: (path: keyof ResumeData, index?: number) => void;
     onRemoveItem: (path: keyof ResumeData, index: number) => void;
     onReorderItem: (path: keyof ResumeData, oldIndex: number, newIndex: number) => void;
-    hasOverflow: boolean;
-    onOverflowChange: (overflow: boolean) => void;
     customTemplates: TemplateConfig[];
     onAnalyzeTemplate: (file: File) => void;
     isAnalyzingTemplate: boolean;
@@ -73,7 +72,7 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
     const controlPanelRef = useRef<HTMLElement>(null);
 
     const { 
-        hasOverflow, selectedTemplate, t, 
+        selectedTemplate, t, 
         selectionTooltip, onSelectionTooltipChange, onSelectionEdit,
         zoomLevel, isControlPanelOpen, editorView, onEditorViewChange
     } = props;
@@ -96,7 +95,6 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
         const templateProps = {
             data: props.resumeData,
             design: props.designOptions,
-            onOverflowChange: props.onOverflowChange,
             t: props.t,
             editMode: props.isLiveEditingEnabled,
             onUpdate: props.onResumeUpdate,
@@ -126,6 +124,8 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 return <TemplateProfessional {...templateProps} />;
             case TemplateIdentifier.STRUCTURED:
                 return <TemplateStructured {...templateProps} />;
+            case TemplateIdentifier.MINIMALIST:
+                return <TemplateMinimalist {...templateProps} />;
             default:
                 return <p>Unknown template selected.</p>;
         }
@@ -150,8 +150,6 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
         </div>
     );
     
-    const showOverflowWarning = hasOverflow && selectedTemplate !== TemplateIdentifier.BLUE_HERO && editorView === EditorView.RESUME;
-
     return (
         <div className="w-full h-full flex overflow-hidden">
              {selectionTooltip.visible && (
@@ -190,7 +188,6 @@ const ResumeEditor: React.FC<ResumeEditorProps> = (props) => {
                 >
                     {editorView === EditorView.RESUME ? (
                         <div className={`max-w-4xl mx-auto ${!props.isLiveEditingEnabled ? 'layout-mode' : ''}`}>
-                            {showOverflowWarning && <PaginationWarning t={t} />}
                             <div>
                                 {renderPreview()}
                             </div>
